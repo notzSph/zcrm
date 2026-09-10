@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Activity,
+  Activity as ActivityIcon,
   AlarmClock,
   Bell,
   CalendarDays,
@@ -13,7 +13,9 @@ import {
   CirclePlus,
   FileText,
   MessageSquareText,
+  Pencil,
   Plus,
+  Trash2,
   Trophy,
   UserRoundPlus,
   X,
@@ -66,6 +68,16 @@ function leadReminder(lead: Lead) {
   return lead.reminders.find((reminder) => !reminder.completed_at);
 }
 
+function reminderState(value: string) {
+  const due = new Date(value);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  if (due < today) return "overdue";
+  if (due < tomorrow) return "today";
+  return "upcoming";
+}
+
 export default function CrmDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selected, setSelected] = useState<Lead | null>(null);
@@ -90,6 +102,17 @@ export default function CrmDashboard() {
     setSelected((current) =>
       current ? (data.find((lead) => lead.id === current.id) ?? null) : null,
     );
+  };
+
+  const refreshLead = async (leadId: string) => {
+    const response = await fetch(`/api/leads/${leadId}`, { cache: "no-store" });
+    if (!response.ok) {
+      setError("Could not refresh this lead.");
+      return;
+    }
+    const freshLead = (await response.json()) as Lead;
+    setLeads((current) => current.map((lead) => lead.id === leadId ? freshLead : lead));
+    setSelected((current) => current?.id === leadId ? freshLead : current);
   };
 
   useEffect(() => {
@@ -158,7 +181,7 @@ export default function CrmDashboard() {
       setError("Could not save changes.");
       return;
     }
-    await refresh();
+    await refreshLead(id);
   }
 
   async function moveLead(leadId: string, destination: LeadStatus) {
@@ -188,7 +211,7 @@ export default function CrmDashboard() {
       return;
     }
     event.currentTarget.reset();
-    await refresh();
+    await refreshLead(leadId);
   }
 
   async function completeReminder(reminder: Reminder) {
@@ -201,6 +224,30 @@ export default function CrmDashboard() {
       setError("Could not complete reminder.");
       return;
     }
+    const leadId = leads.find((lead) => lead.reminders.some((item) => item.id === reminder.id))?.id;
+    if (leadId) await refreshLead(leadId); else await refresh();
+  }
+
+  async function updateReminder(id: string, updates: Partial<Reminder>) {
+    const response = await fetch(`/api/reminders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updates) });
+    if (!response.ok) { setError("Could not update reminder."); return; }
+    const leadId = leads.find((lead) => lead.reminders.some((item) => item.id === id))?.id;
+    if (leadId) await refreshLead(leadId); else await refresh();
+  }
+
+  async function deleteReminder(id: string) {
+    if (!window.confirm("Delete this reminder?")) return;
+    const leadId = leads.find((lead) => lead.reminders.some((item) => item.id === id))?.id;
+    const response = await fetch(`/api/reminders/${id}`, { method: "DELETE" });
+    if (!response.ok) { setError("Could not delete reminder."); return; }
+    if (leadId) await refreshLead(leadId); else await refresh();
+  }
+
+  async function deleteLead(id: string) {
+    if (!window.confirm("Delete this lead and its full history? This cannot be undone.")) return;
+    const response = await fetch(`/api/leads/${id}`, { method: "DELETE" });
+    if (!response.ok) { setError("Could not delete lead."); return; }
+    setSelected(null);
     await refresh();
   }
 
@@ -232,7 +279,7 @@ export default function CrmDashboard() {
       )}
       <section className={styles.overview}>
         <div>
-          <span><Activity size={14} /> Open pipeline</span>
+          <span><ActivityIcon size={14} /> Open pipeline</span>
           <strong>
             {leads.filter((lead) => !outcomes.includes(lead.status)).length}
           </strong>
@@ -333,14 +380,12 @@ export default function CrmDashboard() {
                     >
                       <div className={styles.cardTop}>
                         <strong>{lead.company}</strong>
-                        {stage.key === LeadStatus.Won && (
-                          <em data-status={lead.status}>{lead.status}</em>
-                        )}
+                        <em className={styles.statusChip} data-status={lead.status}>{lead.status}</em>
                       </div>
                       <span>{lead.contact_name || "No contact yet"}</span>
                       {lead.next_action && <p>{lead.next_action}</p>}
                       {leadReminder(lead) && (
-                        <small>
+                        <small className={styles.dueChip} data-due={reminderState(leadReminder(lead)!.due_at)}>
                           <Bell size={12} />{" "}
                           {dateLabel(leadReminder(lead)!.due_at)}
                         </small>
@@ -400,6 +445,9 @@ export default function CrmDashboard() {
           onUpdate={updateLead}
           onAddReminder={addReminder}
           onCompleteReminder={completeReminder}
+          onUpdateReminder={updateReminder}
+          onDeleteReminder={deleteReminder}
+          onDeleteLead={deleteLead}
         />
       )}
     </main>
@@ -436,6 +484,9 @@ function LeadDrawer({
   onUpdate,
   onAddReminder,
   onCompleteReminder,
+  onUpdateReminder,
+  onDeleteReminder,
+  onDeleteLead,
 }: {
   lead: Lead;
   onClose: () => void;
@@ -445,12 +496,16 @@ function LeadDrawer({
     event: FormEvent<HTMLFormElement>,
   ) => Promise<void>;
   onCompleteReminder: (reminder: Reminder) => Promise<void>;
+  onUpdateReminder: (id: string, updates: Partial<Reminder>) => Promise<void>;
+  onDeleteReminder: (id: string) => Promise<void>;
+  onDeleteLead: (id: string) => Promise<void>;
 }) {
   const [company, setCompany] = useState(lead.company);
   const [contactName, setContactName] = useState(lead.contact_name || "");
   const [contactEmail, setContactEmail] = useState(lead.contact_email || "");
   const [nextAction, setNextAction] = useState(lead.next_action || "");
   const [status, setStatus] = useState<LeadStatus>(lead.status);
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
   useEffect(() => {
     setCompany(lead.company);
     setContactName(lead.contact_name || "");
@@ -467,6 +522,12 @@ function LeadDrawer({
       next_action: nextAction || null,
       status,
     });
+  }
+  async function saveReminder(event: FormEvent<HTMLFormElement>, reminder: Reminder) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    await onUpdateReminder(reminder.id, { title: String(form.get("title")), kind: form.get("kind") as Reminder["kind"], due_at: new Date(String(form.get("due_at"))).toISOString() });
+    setEditingReminderId(null);
   }
   return (
     <div className={styles.drawerWrap}>
@@ -536,19 +597,7 @@ function LeadDrawer({
           </div>
           {lead.reminders.map((reminder) => (
             <div className={styles.reminderRow} key={reminder.id}>
-              <button
-                disabled={Boolean(reminder.completed_at)}
-                onClick={() => onCompleteReminder(reminder)}
-              >
-                {reminder.completed_at ? <Check size={14} /> : <span />}
-              </button>
-              <div>
-                <strong>{reminder.title}</strong>
-                <small>
-                  {dateLabel(reminder.due_at)}
-                  {reminder.completed_at ? " · done" : ""}
-                </small>
-              </div>
+              {editingReminderId === reminder.id ? <form className={styles.editReminder} onSubmit={(event) => saveReminder(event, reminder)}><input name="title" defaultValue={reminder.title} required /><select name="kind" defaultValue={reminder.kind}>{reminderKindOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><input name="due_at" type="datetime-local" defaultValue={localDateTime(reminder.due_at)} required /><div><button type="submit">Save</button><button type="button" onClick={() => setEditingReminderId(null)}>Cancel</button></div></form> : <><button disabled={Boolean(reminder.completed_at)} onClick={() => onCompleteReminder(reminder)}>{reminder.completed_at ? <Check size={14} /> : <span />}</button><div><strong>{reminder.title}</strong><small><em className={styles.kindChip}>{reminder.kind.replace("_", " ")}</em>{dateLabel(reminder.due_at)}{reminder.completed_at ? " · done" : ""}</small></div><div className={styles.reminderActions}><button type="button" title="Edit reminder" onClick={() => setEditingReminderId(reminder.id)}><Pencil size={13} /></button><button type="button" title="Delete reminder" onClick={() => onDeleteReminder(reminder.id)}><Trash2 size={13} /></button></div></>}
             </div>
           ))}
           <form
@@ -571,6 +620,7 @@ function LeadDrawer({
           </form>
         </div>
         <ActivityLog activities={lead.activities} />
+        <button className={styles.deleteLead} type="button" onClick={() => onDeleteLead(lead.id)}><Trash2 size={14} /> Delete lead</button>
       </aside>
     </div>
   );
@@ -583,6 +633,7 @@ function ActivityLog({ activities }: { activities: Activity[] }) {
     if (activity.event_type === ActivityType.LeadUpdated) return `Updated: ${(activity.payload.fields as string[]).join(", ")}`;
     if (activity.event_type === ActivityType.ReminderCreated) return `Added ${activity.payload.kind} reminder: ${activity.payload.title}`;
     if (activity.event_type === ActivityType.ReminderCompleted) return `Completed reminder: ${activity.payload.title}`;
+    if (activity.event_type === ActivityType.ReminderDeleted) return `Deleted reminder: ${activity.payload.title}`;
     return `Updated reminder: ${activity.payload.title}`;
   };
   return <div className={styles.activitySection}>

@@ -23,6 +23,7 @@ export enum ActivityType {
   ReminderCreated = "reminder_created",
   ReminderCompleted = "reminder_completed",
   ReminderUpdated = "reminder_updated",
+  ReminderDeleted = "reminder_deleted",
 }
 
 export type Reminder = {

@@ -283,21 +283,8 @@
   color: $zCyan;
   font: 500 10px var(--font-mono);
 }
-.card em {
-  padding: 3px 5px;
-  border-radius: 4px;
-  color: $zTextMuted;
-  background: $zBg3;
-  font: 500 9px var(--font-mono);
-  font-style: normal;
-  text-transform: uppercase;
-}
-.card em[data-status="won"] {
-  color: $zGreen;
-}
-.card em[data-status="lost"] {
-  color: $zPink;
-}
+.statusChip { flex: 0 0 auto; padding: 4px 6px; border: 1px solid currentColor; border-radius: 4px; color: $zBlue; background: rgba($zBlue, .1); font: 500 9px var(--font-mono); font-style: normal; text-transform: uppercase; }.statusChip[data-status="connected"] { color: $zBlue; background: rgba($zBlue, .1); }.statusChip[data-status="contacted"] { color: $zCyan; background: rgba($zCyan, .1); }.statusChip[data-status="meeting"] { color: $zOrange; background: rgba($zOrange, .11); }.statusChip[data-status="proposal"] { color: $zLavender; background: rgba($zViolet, .13); }.statusChip[data-status="won"] { color: $zGreen; background: rgba($zGreen, .1); }.statusChip[data-status="lost"] { color: $zPink; background: rgba($zPink, .1); }.statusChip[data-status="nurture"] { color: $zTextMuted; background: rgba($zTextMuted, .1); }
+.dueChip { width: fit-content; padding: 4px 6px; border-radius: 4px; background: rgba($zCyan, .09); }.dueChip[data-due="today"] { color: $zOrange; background: rgba($zOrange, .1); }.dueChip[data-due="overdue"] { color: $zPink; background: rgba($zPink, .1); }
 .blank {
   display: flex;
   align-items: center;
@@ -371,7 +358,8 @@
 .form input,
 .form textarea,
 .form select,
-.addReminder input {
+.addReminder input,
+.addReminder select {
   width: 100%;
   min-height: 39px;
   padding: 9px 10px;
@@ -389,7 +377,8 @@
 .form input:focus,
 .form textarea:focus,
 .form select:focus,
-.addReminder input:focus {
+.addReminder input:focus,
+.addReminder select:focus {
   border-color: $zViolet;
 }
 .drawerWrap {
@@ -491,6 +480,7 @@
   background: $zBg3;
   border-radius: 7px;
 }
+.reminderActions { display: flex !important; gap: 4px; margin-left: auto; }.reminderActions button { display: grid; place-items: center; width: 24px; height: 24px; color: $zTextMuted; background: transparent; border: 1px solid $zLine; border-radius: 5px; }.reminderActions button:hover { color: $zText; background: $zBg3; }.reminderActions button:last-child:hover { color: $zPink; }.kindChip { margin-right: 6px; padding: 2px 4px; color: $zLavender; border-radius: 3px; background: rgba($zViolet, .12); font: 500 8px var(--font-mono); font-style: normal; text-transform: uppercase; }.editReminder { display: grid; grid-template-columns: 1fr; width: 100%; gap: 6px; }.editReminder input, .editReminder select { width: 100%; min-height: 31px; padding: 6px 8px; color: $zText; background: $zBg2; border: 1px solid $zLine; border-radius: 5px; font-size: 11px; }.editReminder > div { display: flex !important; gap: 6px; }.editReminder button { min-height: 28px; padding: 0 9px; color: $zText; background: $zBg3; border-radius: 5px; font-size: 10px; }.editReminder button:first-child { background: $zViolet; }.deleteLead { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 35px; margin-top: 24px; color: $zPink; border: 1px solid rgba($zPink, .28); border-radius: 7px; background: rgba($zPink, .06); font-size: 11px; }.deleteLead:hover { background: rgba($zPink, .13); }
 .activitySection { margin-top: 28px; padding-top: 22px; border-top: 1px solid $zLine; }
 .activityRow { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba($zLine, .6); }
 .activityRow > span { width: 8px; height: 8px; flex: 0 0 auto; margin-top: 5px; border-radius: 50%; background: $zLavender; box-shadow: 0 0 0 3px rgba($zViolet, .13); }

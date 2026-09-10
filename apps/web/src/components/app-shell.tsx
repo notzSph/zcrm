@@ -3,11 +3,12 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BarChart3, Bell, FileText, LayoutDashboard, LogOut, Plus, UsersRound } from "lucide-react";
+import { BarChart3, Bell, Building2, CalendarDays, FileText, LayoutDashboard, LogOut, Plus, UsersRound } from "lucide-react";
 import styles from "./app-shell.module.scss";
 
 const mainLinks = [
   { href: "/", label: "Pipeline", icon: LayoutDashboard, match: (path: string) => path === "/" },
+  { href: "/calendar", label: "Follow-up calendar", icon: CalendarDays, match: (path: string) => path === "/calendar" },
   { href: "/leads", label: "Lead directory", icon: UsersRound, match: (path: string) => path.startsWith("/leads") },
 ];
 const quickLinks = [
@@ -19,7 +20,7 @@ const quickLinks = [
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  if (pathname === "/login") return <>{children}</>;
+  if (pathname === "/login" || pathname === "/businesses") return <>{children}</>;
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -29,7 +30,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return <div className={styles.shell}>
     <aside className={styles.sidebar}>
       <Link className={styles.brand} href="/"><span>z</span>CRM</Link>
-      <p className={styles.workspace}>Private workspace</p>
+      <Link className={styles.workspace} href="/businesses"><Building2 size={12} /> Switch business</Link>
       <Link className={styles.newLead} href="/leads/new"><Plus size={16} /> New lead</Link>
       <nav className={styles.nav} aria-label="Main navigation">
         {mainLinks.map((link) => { const Icon = link.icon; return <Link className={link.match(pathname) ? styles.active : ""} href={link.href} key={link.href}><Icon size={16} />{link.label}</Link>; })}

@@ -11,13 +11,12 @@ export async function POST(request: Request) {
   if (!response.ok) return NextResponse.json(payload, { status: response.status });
 
   const result = NextResponse.json({ ok: true });
-  result.cookies.set("zcrm_session", payload.access_token, {
+  result.cookies.set("zcrm_session", payload.session_token, {
     httpOnly: true,
     secure: process.env.COOKIE_SECURE !== "false",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 12,
+    maxAge: 60 * 60 * 24 * 30,
   });
   return result;
 }
-

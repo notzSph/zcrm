@@ -27,7 +27,7 @@ export default function LoginPage() {
       setError("Incorrect email or password.");
       return;
     }
-    router.replace("/");
+    router.replace("/businesses");
     router.refresh();
   }
 
