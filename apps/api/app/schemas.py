@@ -11,9 +11,43 @@ class LoginIn(BaseModel):
     password: str = Field(min_length=1)
 
 
-class TokenOut(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+class RegisterIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=10)
+    display_name: str = Field(min_length=1, max_length=180)
+    business_name: str = Field(min_length=1, max_length=180)
+
+
+class BusinessOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    name: str
+    created_at: datetime
+
+
+class UserOut(BaseModel):
+    id: uuid.UUID
+    email: EmailStr
+    display_name: str
+    businesses: list[BusinessOut]
+    active_business_id: uuid.UUID | None
+
+
+class LoginOut(BaseModel):
+    session_token: str
+    user: UserOut
+
+
+class BusinessCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=180)
+
+
+class ActiveBusinessUpdate(BaseModel):
+    business_id: uuid.UUID
+
+
+class MemberAdd(BaseModel):
+    email: EmailStr
 
 
 class ReminderCreate(BaseModel):
