@@ -15,3 +15,4 @@
 .card button { min-height: 44px; display: flex; justify-content: center; align-items: center; gap: 9px; border: 0; border-radius: 9px; color: white; background: $zViolet; font-weight: 800; }
 .card button:disabled { opacity: .6; cursor: wait; }
 .error { margin: -4px 0 0; color: #ff899a; font-size: 13px; }
+.authLink { margin: 20px 0 0 !important; color: $zTextMuted !important; font-size: 11px !important; text-align: center; }.authLink a { color: $zLavender; }.authLink a:hover { color: $white; }

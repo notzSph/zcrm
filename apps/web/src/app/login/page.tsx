@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.scss";
 
@@ -44,6 +45,7 @@ export default function LoginPage() {
           {error && <p className={styles.error}>{error}</p>}
           <button disabled={loading}>{loading ? "Signing in…" : <>Enter zCRM <ArrowRight size={17} /></>}</button>
         </form>
+        <p className={styles.authLink}>New here? <Link href="/register">Create your business</Link></p>
       </section>
     </main>
   );

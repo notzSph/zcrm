@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from .database import Base, engine
 from .models import Activity, ActivityType, Business, BusinessMembership, Lead, LeadStatus, Reminder, ReminderKind, User, UserSession
-from .schemas import ActiveBusinessUpdate, BusinessCreate, BusinessOut, LeadCreate, LeadOut, LeadUpdate, LoginIn, LoginOut, MemberAdd, RegisterIn, ReminderCreate, ReminderOut, ReminderUpdate, UserOut
+from .schemas import ActiveBusinessUpdate, BusinessCreate, BusinessOut, BusinessUpdate, LeadCreate, LeadOut, LeadUpdate, LoginIn, LoginOut, MemberAdd, RegisterIn, ReminderCreate, ReminderOut, ReminderUpdate, UserOut
 from .security import RequestContext, create_session, get_db, get_user_session, hash_password, require_context, verify_password
 
 app = FastAPI(title="zCRM API", version="0.2.0")
@@ -119,6 +119,30 @@ def list_businesses(request: Request, db: Session = Depends(get_db)) -> list[Bus
 @app.post("/api/v1/businesses", response_model=BusinessOut, status_code=status.HTTP_201_CREATED)
 def create_business(payload: BusinessCreate, request: Request, db: Session = Depends(get_db)) -> Business:
     user, _ = current_user(request, db); business = Business(name=payload.name.strip()); db.add(business); db.flush(); db.add(BusinessMembership(user_id=user.id, business_id=business.id)); db.commit(); db.refresh(business); return business
+
+
+def business_for_user(db: Session, user_id: uuid.UUID, business_id: uuid.UUID) -> Business:
+    business = db.query(Business).join(BusinessMembership).filter(Business.id == business_id, BusinessMembership.user_id == user_id).first()
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
+    return business
+
+
+@app.get("/api/v1/businesses/{business_id}", response_model=BusinessOut)
+def get_business(business_id: uuid.UUID, request: Request, db: Session = Depends(get_db)) -> Business:
+    user, _ = current_user(request, db); return business_for_user(db, user.id, business_id)
+
+
+@app.patch("/api/v1/businesses/{business_id}", response_model=BusinessOut)
+def update_business(business_id: uuid.UUID, payload: BusinessUpdate, request: Request, db: Session = Depends(get_db)) -> Business:
+    user, _ = current_user(request, db); business = business_for_user(db, user.id, business_id); business.name = payload.name.strip(); db.commit(); db.refresh(business); return business
+
+
+@app.delete("/api/v1/businesses/{business_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_business(business_id: uuid.UUID, request: Request, db: Session = Depends(get_db)) -> None:
+    user, _ = current_user(request, db); business = business_for_user(db, user.id, business_id)
+    db.query(UserSession).filter(UserSession.active_business_id == business.id).update({"active_business_id": None})
+    db.delete(business); db.commit()
 
 
 @app.get("/api/v1/businesses/{business_id}/members", response_model=list[UserOut])

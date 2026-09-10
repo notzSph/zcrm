@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname === "/login" || pathname.startsWith("/api") || pathname.startsWith("/_next") || pathname === "/favicon.ico") {
+  if (pathname === "/login" || pathname === "/register" || pathname.startsWith("/api") || pathname.startsWith("/_next") || pathname === "/favicon.ico") {
     return NextResponse.next();
   }
-  if (!request.cookies.get("zcrm_session")) {
+  const token = request.cookies.get("zcrm_session")?.value;
+  if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
+  const response = await fetch(`${process.env.API_INTERNAL_URL}/api/v1/auth/me`, {
+    headers: { Cookie: `zcrm_session=${token}` },
+    cache: "no-store",
+  }).catch(() => null);
+  if (!response?.ok) return NextResponse.redirect(new URL("/login", request.url));
+  const user = await response.json() as { active_business_id: string | null };
+  if (pathname !== "/businesses" && !user.active_business_id) return NextResponse.redirect(new URL("/businesses", request.url));
   return NextResponse.next();
 }
 

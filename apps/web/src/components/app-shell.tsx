@@ -20,7 +20,7 @@ const quickLinks = [
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  if (pathname === "/login" || pathname === "/businesses") return <>{children}</>;
+  if (pathname === "/login" || pathname === "/register" || pathname === "/businesses") return <>{children}</>;
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });

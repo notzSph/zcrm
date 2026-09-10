@@ -42,6 +42,10 @@ class BusinessCreate(BaseModel):
     name: str = Field(min_length=1, max_length=180)
 
 
+class BusinessUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=180)
+
+
 class ActiveBusinessUpdate(BaseModel):
     business_id: uuid.UUID
 
