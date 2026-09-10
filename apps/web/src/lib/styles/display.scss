@@ -1,0 +1,47 @@
+/**
+* Default classes for display property.
+*
+* Classes Name  --->  d-{DISPLAY_TYPE}
+*/
+
+.d-none {
+    display: none;
+}
+
+.d-inblock {
+    display: inline-block;
+}
+
+
+.grid,
+.ga-center {
+    display: grid;
+}
+
+.grid-2-md {
+    display: grid;
+    gap: 2rem;
+}
+
+@media (min-width: 768px) {
+    .grid-2-md {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.ga-center{
+    align-items: center;
+}
+
+.bg-none {
+    background: none;
+}
+
+.br-none {
+    border: none;
+}
+
+.ifa-center {
+    display: inline-flex;
+    align-items: center;
+}

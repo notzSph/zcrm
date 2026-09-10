@@ -1,0 +1,176 @@
+@use "./variables.scss" as var;
+
+
+:root {
+  --z-bg-0: #{var.$zBg0};
+  --z-bg-1: #{var.$zBg1};
+  --z-bg-2: #{var.$zBg2};
+  --z-bg-3: #{var.$zBg3};
+  --z-line: #{var.$zLine};
+  --z-line-strong: #{var.$zLineStrong};
+  --z-text: #{var.$zText};
+  --z-text-soft: #{var.$zTextSoft};
+  --z-text-muted: #{var.$zTextMuted};
+  --z-lavender: #{var.$zLavender};
+  --z-violet: #{var.$zViolet};
+  --z-pink: #{var.$zPink};
+  --z-cyan: #{var.$zCyan};
+  --z-blue: #{var.$zBlue};
+  --z-green: #{var.$zGreen};
+  --z-orange: #{var.$zOrange};
+  --z-warm: #{var.$zWarm};
+  --background: #{var.$background};
+  --foreground: #{var.$foreground};
+  --surface: #{var.$surface};
+  --surface-raised: #{var.$surfaceRaised};
+  --card: #{var.$surface};
+  --card-foreground: #{var.$foreground};
+  --popover: #{var.$popover};
+  --popover-foreground: #{var.$foreground};
+  --primary: #{var.$foreground};
+  --primary-foreground: #{var.$primaryForeground};
+  --secondary: #{var.$secondary};
+  --secondary-foreground: #{var.$foreground};
+  --muted: #{var.$mutedSurface};
+  --muted-foreground: #{var.$mutedForeground};
+  --silver: #{var.$silver};
+  --accent: #{var.$accent};
+  --accent-foreground: #{var.$primaryForeground};
+  --signal-amber: #{var.$amber};
+  --accent-dim: #{var.$accentDim};
+  --signal-cyan: #{var.$cyan};
+  --signal-emerald: #{var.$emerald};
+  --signal-violet: #{var.$violet};
+  --destructive: #{var.$red};
+  --destructive-foreground: #{var.$destructiveForeground};
+  --border: #{var.$border};
+  --border-strong: #{var.$borderStrong};
+  --input: #{var.$input};
+  --ring: #{var.$accent};
+}
+
+
+.cc-red {
+  color: var.$red;
+}
+.cc-silver {
+  color: var.$silver;
+}
+.cc-cyan {
+  color: var.$cyan;
+}
+.cc-amber {
+  color: var.$amber;
+}
+.cc-emerald {
+  color: var.$emerald;
+}
+
+.cc-violet {
+  color: var.$violet;
+}
+
+.cc-accent {
+  color: var.$accent;
+}
+
+.cc-muted {
+  color: var.$muted;
+}
+
+.bc-red {
+  border-color: var.$red;
+}
+
+.bc-cyan {
+  border: 1px solid oklch(from var(--signal-cyan) l c h / 0.25);
+}
+
+.bc-amber {
+  border: 1px solid oklch(from var(--signal-amber) l c h / 0.25);
+}
+
+.bc-emerald {
+  border: 1px solid oklch(from var(--signal-emerald) l c h / 0.25);
+}
+
+.bc-violet {
+  border: 1px solid oklch(from var(--signal-violet) l c h / 0.25);
+}
+
+.bc-accent {
+  border: 1px solid oklch(from var(--accent) l c h / 0.25);
+}
+
+.bg-red {
+  background: var.$red;
+}
+
+.bg-emerald {
+  background: var.$emerald;
+}
+
+.bg-amber {
+  background: var.$amber;
+}
+
+.bg-cyan {
+  background: var.$cyan;
+}
+
+.bg-accent {
+  background: var.$accent;
+}
+
+.bg-violet {
+  background: var.$violet;
+}
+
+.shadow-emerald {
+  box-shadow: 0 0 6px var.$shadowEmerald;
+}
+
+.shadow-cyan {
+  box-shadow: 0 0 6px var.$shadowCyan;
+}
+
+.shadow-amber {
+  box-shadow: 0 0 6px var.$shadowAmber;
+}
+
+.shadow-violet {
+  box-shadow: 0 0 6px var.$shadowViolet;
+}
+
+.shadow-red {
+  box-shadow: 0 0 6px var.$shadowRed;
+}
+
+.surface-cyan {
+  background: oklch(from var(--signal-cyan) l c h / 0.05);
+  box-shadow: 0 0 24px -14px var.$shadowCyan;
+
+}
+
+.surface-amber {
+  background: oklch(from var(--signal-amber) l c h / 0.05);
+  box-shadow: 0 0 24px -14px var.$shadowAmber;
+
+}
+
+.surface-violet {
+  background: oklch(from var(--signal-violet) l c h / 0.05);
+  box-shadow: 0 0 24px -14px var.$shadowViolet;
+
+}
+
+.surface-accent {
+  background: oklch(from var(--accent) l c h / 0.05);
+  box-shadow: 0 0 24px -14px var.$shadowAccent;
+
+}
+
+.surface-emerald {
+  background: oklch(from var(--signal-emerald) l c h / 0.05);
+  box-shadow: 0 0 24px -14px var.$shadowEmerald;
+}

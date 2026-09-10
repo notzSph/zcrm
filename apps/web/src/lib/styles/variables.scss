@@ -1,0 +1,140 @@
+/**
+ * Global Default Design variables.
+ *
+ * Provides the default values used across the framework for:
+ *   - Heights
+ *   - Border radius
+ *   - Font weights
+ *   - Font sizes
+ *   - Margins & paddings
+ *   - Line heights
+ *   - Transition durations
+ *   - Core colors
+ *
+ * All utility classes in this library should reference these variables
+ * to keep design consistent.
+ */
+
+/* Heights */
+$headerHeight: 75px;
+$inputHeight: 25px;
+$textareaHeight: 70px;
+$textareaMinHeight: 50px;
+
+/* Border Radius */
+$tinyRadius: 0.25rem;
+$smallRadius: 0.5rem;
+$mediumRadius: 1rem;
+$largeRadius: 1.5625rem;
+$veryLargeRadius: 3.125rem;
+$infiniteRadius: 50rem;
+
+/* Font Weights */
+$fw100: 100;
+$fw200: 205;
+$fw300: 310;
+$fw400: 420;
+$fw500: 524;
+$fw600: 630;
+$fw700: 738;
+$fw800: 846;
+
+/* Font Sizes */
+$fsMin: 0.64rem; 
+$fsXS: 0.8rem;
+$fsSmall: 1rem;
+$fsMid: 1.25rem;
+$fsLarge: 1.563rem;
+$fsXL: 1.953rem;
+$fsXXL: 4.75rem;
+$fsMax: 6.5rem;
+
+/* Margins & Paddings */
+$microMargin: 0.125rem;
+$tinyMargin: 0.25rem;
+$smallMargin: 0.5rem;
+$mediumMargin: 0.75rem;
+$largeMargin: 1rem;
+$veryLargeMargin: 1.75rem;
+$maxMargin: 3.25rem;
+
+
+/* Line Heights */
+$defaultLineHeight: 1.625em;
+$mobileLineHeight: 1.75em;
+
+/* Transitiions */
+$transitionTimeInstant: 0.12s;
+$transitionTimeLow: 0.25s;
+$transitionTimeMid: 0.45s;
+$transitionTimeLong: 0.85s;
+
+/* Colors */
+$transparent: #ffffff00;
+
+$black: #000000;
+$notBlack: #262626;
+
+$white: #ffffff;
+$notWhite: #f0f0f0;
+
+$muted: #75747c;
+
+$red: #f94144;
+$cyan: #13dcf6;
+$amber: #fbc959;
+$silver: #b9bdd4;
+$violet: #bca7ff;
+$emerald: #2bdda4;
+
+/* zSpinach palette */
+$zBg0: #181726;
+$zBg1: #1f1d30;
+$zBg2: #232136;
+$zBg3: #2f2c49;
+$zLine: #bbb3ff29;
+$zLineStrong: #bbb3ff52;
+$zText: #f4f1ff;
+$zTextSoft: #c5c2d6;
+$zTextMuted: #8d88ad;
+$zLavender: #bbb3ff;
+$zViolet: #7060eb;
+$zPink: #df769b;
+$zCyan: #49d6e9;
+$zBlue: #49ace9;
+$zGreen: #49e9a6;
+$zOrange: #e4b781;
+$zWarm: #e3541c;
+
+/* Systems partner dump palette */
+$background: #02030b;
+$foreground: #f6f6fd;
+$surface: #0a0b23;
+$surfaceRaised: #161739;
+$popover: #0f102c;
+$primaryForeground: #050614;
+$secondary: #171939;
+$mutedSurface: #13152f;
+$mutedForeground: #9a9eb7;
+$accent: #987aff;
+$accentDim: #a05aff24;
+$destructiveForeground: #f7f4f9;
+$border: #c6cdf31a;
+$borderStrong: #c6cdfb33;
+$input: #c6cdf324;
+
+/* Shell overlays */
+$shellGlowPrimary: #7e63f01a;
+$shellGlowSecondary: #523bd014;
+$shellGlowTertiary: #7e63f017;
+$shellFadeStart: #02030b00;
+$shellFadeMid: #02030b2e;
+$shellFadeEnd: #02030b6b;
+
+/* Alpha colors */
+$shadowEmerald: #78d2a099;
+$shadowCyan: #78c8e6e6;
+$shadowAmber: #e6b450b3;
+$shadowViolet: #bca7ff99;
+$shadowRed: #f9414499;
+$shadowAccent: #987aff99;

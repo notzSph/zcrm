@@ -1,0 +1,19 @@
+@use "@/lib/styles/variables" as *;
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background: $zBg0;
+  color: $zText;
+  font-family: var(--font-mono), monospace !important;
+  font-weight: 500;
+}
+
+p { font-family: var(--font-manrope), Arial, sans-serif; }
+
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+main { padding-top: 0; }

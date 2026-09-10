@@ -1,0 +1,37 @@
+/**
+* Default classes for margin & padding property.
+*
+* "m-{SIZE}" ---> All Side Margins.
+* "m{AXIS}-{SIZE}" ---> Axis Specific Margins.
+* "m{SIDE}-{SIZE}" ---> Side Specific Margins.
+*
+* "p-{SIZE}" ---> All Side Paddings.
+* "p{AXIS}-{SIZE}" ---> Axis Specific Paddings.
+* "p{SIDE}-{SIZE}" ---> Side Specific Paddings.
+
+* "g-{SIZE}" ---> All Side Gaps.
+* "g{AXIS}-{SIZE}" ---> Axis Specific Paddings.
+*/
+
+@use "./variables.scss" as var;
+
+/** Margins All side */
+.br-1 {
+    border-radius: var.$tinyMargin
+}
+
+.br-2 {
+    border-radius: var.$smallMargin;
+}
+
+.br-3 {
+    border-radius: var.$mediumMargin;
+}
+
+.br-4 {
+    border-radius: var.$largeMargin
+}
+
+.br-5 {
+    border-radius: var.$infiniteRadius
+}

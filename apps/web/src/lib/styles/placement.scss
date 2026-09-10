@@ -1,0 +1,93 @@
+/**
+* Default classes for position placement properties.
+*
+* Classes Name  --->  side-{VALUE}
+*/
+
+@use "./variables.scss" as var;
+
+/** Top */
+.top-0 {
+    top: 0px;
+}
+.top-1 {
+    top: var.$tinyMargin;
+}
+.top-2 {
+    top: var.$smallMargin;
+}
+.top-3 {
+    top: var.$mediumMargin;
+}
+.top-4 {
+    top: var.$largeMargin
+}
+.top-5 {
+    top: var.$veryLargeMargin;
+}
+
+/** Right */
+.right-0 {
+    right: 0px;
+}
+.right-1 {
+    right: var.$tinyMargin;
+}
+.right-2 {
+    right: var.$smallMargin;
+}
+.right-3 {
+    right: var.$mediumMargin;
+}
+.right-4 {
+    right: var.$largeMargin
+}
+.right-5 {
+    right: var.$veryLargeMargin;
+}
+
+/** Bottom */
+.bottom-0 {
+    bottom: 0px;
+}
+.bottom-1 {
+    bottom: var.$tinyMargin;
+}
+.bottom-2 {
+    bottom: var.$smallMargin;
+}
+.bottom-3 {
+    bottom: var.$mediumMargin;
+}
+.bottom-4 {
+    bottom: var.$largeMargin
+}
+.bottom-5 {
+    bottom: var.$veryLargeMargin;
+}
+
+/** Left */
+.left-0 {
+    left: 0px;
+}
+.left-1 {
+    left: var.$tinyMargin;
+}
+.left-2 {
+    left: var.$smallMargin;
+}
+.left-3 {
+    left: var.$mediumMargin;
+}
+.left-4 {
+    left: var.$largeMargin
+}
+.left-5 {
+    left: var.$veryLargeMargin;
+}
+
+
+/** Insets **/
+.inset-0 {
+    inset: 0;
+}
