@@ -1,0 +1,533 @@
+@use "sass:color";
+@use "@/lib/styles/variables" as *;
+
+.page {
+  min-height: 100vh;
+  padding: 30px clamp(18px, 4vw, 64px) 44px;
+}
+.header {
+  align-items: center;
+  gap: 24px;
+  margin: 0 auto 28px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font: 500 24px var(--font-mono);
+  letter-spacing: -0.11em;
+}
+.brand > span {
+  color: $zViolet;
+}
+.header p {
+  margin-top: 5px;
+  color: $zTextMuted;
+  font-size: 12px;
+}
+
+
+.primary,
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+}
+.primary {
+  color: $white;
+  background: $zViolet;
+}
+.primary:hover {
+  background: color.adjust($zViolet, $lightness: 6%);
+}
+.ghost {
+  color: $zTextSoft;
+  background: transparent;
+  border: 1px solid $zLine;
+}
+.ghost:hover {
+  color: $zText;
+  background: $zBg1;
+}
+.error {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1560px;
+  margin: 0 auto 14px;
+  padding: 10px 13px;
+  color: #ffabb9;
+  border: 1px solid rgba($red, 0.35);
+  border-radius: 8px;
+  background: rgba($red, 0.09);
+  font-size: 13px;
+}
+.error button {
+  color: inherit;
+  background: transparent;
+}
+.overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 18px;
+  border: 1px solid $zLine;
+  border-radius: 12px;
+  background: rgba($zBg1, 0.65);
+  overflow: hidden;
+}
+.overview > div {
+  display: grid;
+  gap: 4px;
+  padding: 17px 20px;
+  border-right: 1px solid $zLine;
+}
+.overview > div:last-child {
+  border: 0;
+}
+.overview span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: $zTextMuted;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.overview strong {
+  color: $zText;
+  font: 500 25px var(--font-mono);
+}
+.overview .danger strong {
+  color: $zPink;
+}
+.reminderStrip {
+  display: grid;
+  grid-template-columns: 205px minmax(0, 1fr);
+  margin-bottom: 28px;
+  border: 1px solid $zLine;
+  border-radius: 12px;
+  background: $zBg1;
+  overflow: hidden;
+}
+.reminderTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  border-right: 1px solid $zLine;
+  color: $zLavender;
+}
+.reminderTitle div {
+  display: grid;
+  gap: 3px;
+}
+.reminderTitle span {
+  font-size: 12px;
+  font-weight: 800;
+}
+.reminderTitle small {
+  color: $zTextMuted;
+  font-size: 11px;
+}
+.reminderItems {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  overflow-x: auto;
+}
+.reminder,
+.reminderUrgent {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 7px;
+  max-width: 265px;
+  padding: 12px 16px;
+  color: $zTextSoft;
+  background: transparent;
+  border-right: 1px solid $zLine;
+  text-align: left;
+  font-size: 12px;
+}
+.reminder:hover,
+.reminderUrgent:hover {
+  background: $zBg2;
+}
+.reminder span,
+.reminderUrgent span {
+  color: $zCyan;
+  font: 500 10px var(--font-mono);
+}
+.reminderUrgent span {
+  color: $zPink;
+}
+.emptyReminder {
+  align-self: center;
+  padding: 0 18px;
+  color: $zTextMuted;
+  font-size: 12px;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(210px, 1fr));
+  gap: 13px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+.poweredBy {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  max-width: 1560px;
+  margin: 36px auto 0;
+  color: $zTextMuted;
+  font-size: 10px;
+  letter-spacing: .03em;
+}
+.poweredBy img { width: 16px; height: 16px; }
+.poweredBy strong { color: $zTextSoft; font-weight: 600; }
+.column {
+  min-width: 210px;
+  border-radius: 10px;
+  transition: background .14s ease;
+}
+.dropTarget { background: rgba($zViolet, .1); outline: 1px dashed $zViolet; outline-offset: 4px; }
+.columnHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  min-height: 50px;
+  padding: 0 4px 12px;
+  border-bottom: 1px solid $zLine;
+}
+.columnHead h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: $zTextSoft;
+  font-size: 13px;
+}
+.columnHead small {
+  display: block;
+  margin-top: 3px;
+  color: $zTextMuted;
+  font-size: 10px;
+}
+.columnHead > span {
+  display: grid;
+  place-items: center;
+  min-width: 21px;
+  height: 21px;
+  border-radius: 6px;
+  color: $zTextMuted;
+  background: $zBg2;
+  font: 500 11px var(--font-mono);
+}
+.cards {
+  display: grid;
+  gap: 9px;
+  padding-top: 10px;
+}
+.card {
+  display: grid;
+  width: 100%;
+  gap: 7px;
+  padding: 14px;
+  color: $zTextSoft;
+  background: $zBg1;
+  border: 1px solid $zLine;
+  border-radius: 10px;
+  text-align: left;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: $zLineStrong;
+}
+.card:active { cursor: grabbing; }
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.card strong {
+  color: $zText;
+  font-size: 13px;
+}
+.card > span {
+  color: $zTextMuted;
+  font-size: 11px;
+}
+.card p {
+  margin: 2px 0 0;
+  color: $zTextSoft;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.card small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: $zCyan;
+  font: 500 10px var(--font-mono);
+}
+.card em {
+  padding: 3px 5px;
+  border-radius: 4px;
+  color: $zTextMuted;
+  background: $zBg3;
+  font: 500 9px var(--font-mono);
+  font-style: normal;
+  text-transform: uppercase;
+}
+.card em[data-status="won"] {
+  color: $zGreen;
+}
+.card em[data-status="lost"] {
+  color: $zPink;
+}
+.blank {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 16px 3px;
+  color: $zTextMuted;
+  font-size: 11px;
+}
+.skeleton {
+  height: 106px;
+  border-radius: 10px;
+  background: linear-gradient(100deg, $zBg1 25%, $zBg2 50%, $zBg1 75%);
+  background-size: 200%;
+  animation: pulse 1.3s infinite;
+}
+@keyframes pulse {
+  to {
+    background-position: -200% 0;
+  }
+}
+.overlay,
+.drawerWrap {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+.overlay {
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba($black, 0.55);
+}
+.modal {
+  width: min(100%, 460px);
+  padding: 21px;
+  border: 1px solid $zLineStrong;
+  border-radius: 14px;
+  background: $zBg1;
+  box-shadow: 0 24px 80px rgba($black, 0.45);
+}
+.modalHead,
+.drawerHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 20px;
+}
+.modalHead h2,
+.drawerHead h2 {
+  color: $zText;
+  font-size: 20px;
+}
+.modalHead button,
+.drawerHead button {
+  color: $zTextMuted;
+  background: transparent;
+}
+.form {
+  display: grid;
+  gap: 14px;
+}
+.form label {
+  display: grid;
+  gap: 6px;
+  color: $zTextMuted;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.form input,
+.form textarea,
+.form select,
+.addReminder input {
+  width: 100%;
+  min-height: 39px;
+  padding: 9px 10px;
+  color: $zText;
+  background: $zBg2;
+  border: 1px solid $zLine;
+  border-radius: 7px;
+  outline: none;
+  font-size: 13px;
+}
+.form textarea {
+  min-height: 75px;
+  resize: vertical;
+}
+.form input:focus,
+.form textarea:focus,
+.form select:focus,
+.addReminder input:focus {
+  border-color: $zViolet;
+}
+.drawerWrap {
+  display: flex;
+  justify-content: flex-end;
+}
+.scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  background: rgba($black, 0.5);
+}
+.drawer {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 440px);
+  min-height: 100%;
+  padding: 24px;
+  overflow: auto;
+  background: $zBg1;
+  border-left: 1px solid $zLine;
+  box-shadow: -18px 0 60px rgba($black, 0.3);
+}
+.drawerHead > div {
+  display: grid;
+  gap: 6px;
+}
+.drawerHead span {
+  color: $zViolet;
+  font: 500 10px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+.drawerSection {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid $zLine;
+}
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sectionTitle h3 {
+  color: $zText;
+  font-size: 14px;
+}
+.sectionTitle span {
+  color: $zTextMuted;
+  font: 500 10px var(--font-mono);
+}
+.reminderRow {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba($zLine, 0.6);
+}
+.reminderRow > button {
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  margin-top: 1px;
+  color: $zBg0;
+  background: transparent;
+  border: 1px solid $zTextMuted;
+  border-radius: 50%;
+}
+.reminderRow > button:disabled {
+  color: $zBg0;
+  border-color: $zGreen;
+  background: $zGreen;
+}
+.reminderRow div {
+  display: grid;
+  gap: 3px;
+}
+.reminderRow strong {
+  color: $zTextSoft;
+  font-size: 12px;
+}
+.reminderRow small {
+  color: $zTextMuted;
+  font-size: 10px;
+}
+.addReminder {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  margin-top: 12px;
+}
+.addReminder button {
+  display: grid;
+  place-items: center;
+  min-height: 35px;
+  color: $zText;
+  background: $zBg3;
+  border-radius: 7px;
+}
+.activitySection { margin-top: 28px; padding-top: 22px; border-top: 1px solid $zLine; }
+.activityRow { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba($zLine, .6); }
+.activityRow > span { width: 8px; height: 8px; flex: 0 0 auto; margin-top: 5px; border-radius: 50%; background: $zLavender; box-shadow: 0 0 0 3px rgba($zViolet, .13); }
+.activityRow div { display: grid; gap: 3px; }
+.activityRow strong { color: $zTextSoft; font-size: 11px; line-height: 1.4; }
+.activityRow small { color: $zTextMuted; font-size: 10px; }
+.noActivity { margin: 0; color: $zTextMuted; font-size: 11px; }
+@media (max-width: 700px) {
+  .page {
+    padding: 20px 14px 30px;
+  }
+  .header {
+    align-items: start;
+  }
+  .headerActions .ghost {
+    display: none;
+  }
+  .overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .overview > div:nth-child(2) {
+    border-right: 0;
+  }
+  .overview > div:nth-child(-n + 2) {
+    border-bottom: 1px solid $zLine;
+  }
+  .reminderStrip {
+    grid-template-columns: 1fr;
+  }
+  .reminderTitle {
+    border-right: 0;
+    border-bottom: 1px solid $zLine;
+  }
+  .drawer {
+    width: 100%;
+  }
+  .brand {
+    font-size: 21px;
+  }
+}
