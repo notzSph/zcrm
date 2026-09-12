@@ -4,12 +4,20 @@ type Context = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: NextRequest, context: Context) {
   const token = request.cookies.get("zcrm_session")?.value;
-  if (!token) return NextResponse.json({ detail: "Authentication required" }, { status: 401 });
+  const apiKey = request.headers.get("x-api-key");
+  const businessId = request.headers.get("x-business-id");
+  const isAgentRequest = Boolean(apiKey && businessId);
+  if (!token && !isAgentRequest) return NextResponse.json({ detail: "Authentication required" }, { status: 401 });
   const { path } = await context.params;
   const url = new URL(`/api/v1/${path.join("/")}`, process.env.API_INTERNAL_URL);
   url.search = request.nextUrl.search;
   const headers = new Headers();
-  headers.set("Cookie", `zcrm_session=${token}`);
+  if (isAgentRequest) {
+    headers.set("X-API-Key", apiKey!);
+    headers.set("X-Business-ID", businessId!);
+  } else {
+    headers.set("Cookie", `zcrm_session=${token}`);
+  }
   if (request.headers.get("content-type")) headers.set("Content-Type", request.headers.get("content-type")!);
   const response = await fetch(url, {
     method: request.method,
@@ -24,3 +32,4 @@ export const GET = proxy;
 export const POST = proxy;
 export const PATCH = proxy;
 export const DELETE = proxy;
+export const PUT = proxy;
