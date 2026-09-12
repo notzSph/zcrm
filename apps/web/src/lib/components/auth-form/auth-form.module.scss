@@ -27,7 +27,7 @@
   gap: 5px;
   color: $zText;
   font: 500 22px var(--font-mono);
-  letter-spacing: -0.08em;
+  letter-spacing: -0.035em;
   margin-bottom: 40px;
 }
 .mark img {
@@ -42,7 +42,7 @@
   align-items: center;
   gap: 8px;
   color: $zViolet;
-  font: 500 12px var(--font-mono);
+  font: 500 .9375rem var(--font-mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -54,7 +54,7 @@
 .card > p {
   margin: 0 0 30px;
   color: $zTextSoft;
-  font-size: 14px;
+  font-size: 1rem;
   line-height: 1.6;
 }
 .card form {
@@ -65,7 +65,7 @@
   display: grid;
   gap: 8px;
   color: $zTextSoft;
-  font-size: 12px;
+  font-size: .9375rem;
   font-weight: 700;
 }
 .card input {
@@ -100,12 +100,12 @@
 .error {
   margin: -4px 0 0;
   color: #ff899a;
-  font-size: 13px;
+  font-size: .9375rem;
 }
 .authLink {
   margin: 20px 0 0 !important;
   color: $zTextMuted !important;
-  font-size: 11px !important;
+  font-size: .875rem !important;
   text-align: center;
 }
 .authLink a {
@@ -114,3 +114,11 @@
 .authLink a:hover {
   color: $white;
 }
+
+/* Readable CRM layout, adapted from zSpinach surfaces and controls. */
+
+.card { width: min(100%, 30rem); padding: clamp(1.25rem, 5vw, 2.5rem); }
+.card input { min-height: 3rem; font-size: 1rem; }
+.card button { min-height: 3rem; }
+.authLink { font-size: .9375rem !important; }
+.authLink a { display: inline-flex; align-items: center; min-height: 2.75rem; }

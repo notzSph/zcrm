@@ -11,7 +11,7 @@
   gap: 6px;
   margin-bottom: 22px;
   color: $zTextMuted;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .back:hover {
   color: $zLavender;
@@ -46,7 +46,7 @@
   align-items: center;
   gap: 6px;
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -58,7 +58,7 @@
 .page header p {
   margin-top: 5px;
   color: $zTextMuted;
-  font-size: 12px;
+  font-size: .9375rem;
   line-height: 1.45;
 }
 .headerActions {
@@ -77,7 +77,7 @@
   min-height: 37px;
   padding: 0 11px;
   border-radius: 7px;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .primary,
 .rename button {
@@ -108,7 +108,7 @@
 .about strong,
 .about a {
   color: $zTextSoft;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .about a {
   display: flex;
@@ -132,7 +132,7 @@
 .sectionHead h2 {
   margin-top: 5px;
   color: $zText;
-  font-size: 16px;
+  font-size: 1.125rem;
 }
 .memberList {
   display: grid;
@@ -153,18 +153,18 @@
   color: $zLavender;
   border-radius: 7px;
   background: $zBg3;
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .memberList strong {
   color: $zTextSoft;
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .memberList small {
   display: flex;
   align-items: center;
   gap: 5px;
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .memberList select,
 .members > label select {
@@ -173,7 +173,7 @@
   border: 1px solid $zLine;
   border-radius: 6px;
   background: $zBg2;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .addMember {
   display: grid;
@@ -199,7 +199,7 @@
   gap: 7px;
   padding: 0 17px 17px;
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .members > label select {
   padding: 0 8px;
@@ -207,7 +207,7 @@
 .hint {
   padding: 0 17px 17px;
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
   line-height: 1.5;
 }
 .rename {
@@ -220,7 +220,7 @@
 .error,
 .loading {
   color: $zPink;
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .delete {
   margin-top: 18px;
@@ -262,3 +262,19 @@
     width: 100%;
   }
 }
+
+/* Readable CRM layout, adapted from zSpinach surfaces and controls. */
+
+.page { max-width: 90rem; padding: 2rem var(--crm-page-padding) 3rem; }
+.page header { grid-template-columns: auto minmax(0, 1fr) auto; gap: 1rem; margin-bottom: 1.5rem; }
+.page h1 { font-size: 2rem; overflow-wrap: anywhere; }
+.headerActions, .rename { flex-wrap: wrap; }
+.primary, .secondary, .delete, .rename button, .addMember button, .back { min-height: 2.75rem; }
+.about > div { min-width: 0; padding: 1.25rem; }
+.about strong, .about a { font-size: .9375rem; white-space: normal; overflow-wrap: anywhere; }
+.memberList > div { grid-template-columns: 2.5rem minmax(0, 1fr) minmax(9rem, .8fr) auto; gap: 1rem; padding: 1.25rem; }
+.memberList strong, .memberList small { overflow-wrap: anywhere; min-width: 0; }
+.memberList select, .members > label select, .addMember input, .rename input { min-height: 3rem; font-size: 1rem; padding: .625rem; max-width: 100%; }
+.sectionHead, .addMember { padding: 1.5rem; }
+@media (max-width: 1100px) { .page header { grid-template-columns: auto minmax(0, 1fr); } .headerActions { grid-column: 1 / -1; } .memberList > div { grid-template-columns: 2.5rem minmax(0, 1fr); } .memberList small, .memberList select { grid-column: 2; } }
+@media (max-width: 600px) { .about, .addMember { grid-template-columns: minmax(0, 1fr); } }
