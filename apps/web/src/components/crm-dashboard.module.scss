@@ -81,6 +81,7 @@
   background: rgba($zBg1, 0.65);
   overflow: hidden;
 }
+.dashboardTop { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr); gap:14px; margin-bottom:28px; }.dashboardTop .overview,.dashboardTop .reminderStrip { margin:0; min-width:0; }.dashboardTop .overview { grid-template-columns:repeat(2,1fr); }.dashboardTop .overview > div:nth-child(2) { border-right:0; }.dashboardTop .overview > div:nth-child(-n+2) { border-bottom:1px solid $zLine; }.dashboardTop .overview > div:nth-child(3) { border-bottom:0; }.dashboardTop .overview > div:nth-child(4) { border:0; }.dashboardTop .reminderStrip { grid-template-columns:1fr; align-content:start; }.dashboardTop .reminderTitle { border-right:0; border-bottom:1px solid $zLine; }.dashboardTop .reminderItems { min-height:76px; }.dashboardTop .emptyReminder { padding:18px; }
 .overview > div {
   display: grid;
   gap: 4px;
@@ -488,6 +489,7 @@
 .activityRow strong { color: $zTextSoft; font-size: 11px; line-height: 1.4; }
 .activityRow small { color: $zTextMuted; font-size: 10px; }
 .noActivity { margin: 0; color: $zTextMuted; font-size: 11px; }
+@media (max-width: 1020px) { .dashboardTop { grid-template-columns:1fr; } }
 @media (max-width: 700px) {
   .page {
     padding: 20px 14px 30px;

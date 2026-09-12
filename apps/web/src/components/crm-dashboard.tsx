@@ -277,6 +277,7 @@ export default function CrmDashboard() {
           </button>
         </div>
       )}
+      <div className={styles.dashboardTop}>
       <section className={styles.overview}>
         <div>
           <span><ActivityIcon size={14} /> Open pipeline</span>
@@ -333,6 +334,8 @@ export default function CrmDashboard() {
           )}
         </div>
       </section>
+
+      </div>
 
       <section className={styles.board} aria-label="Sales pipeline">
         {stages.map((stage) => {
