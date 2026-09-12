@@ -83,3 +83,14 @@ export type Lead = {
   interactions: Interaction[];
   attachments: LeadAttachment[];
 };
+
+export type Business = {
+  id: string;
+  owner_id: string | null;
+  name: string;
+  logo_url: string | null;
+  website: string | null;
+  industry: string | null;
+  description: string | null;
+  created_at: string;
+};

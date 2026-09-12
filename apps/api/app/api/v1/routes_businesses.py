@@ -27,7 +27,7 @@ def list_businesses(request: Request, db: Session = Depends(get_db)) -> list[Bus
 
 @router.post("", response_model=BusinessOut, status_code=status.HTTP_201_CREATED)
 def create_business(payload: BusinessCreate, request: Request, db: Session = Depends(get_db)) -> Business:
-    user, _ = get_user_session(request, db); business = Business(name=payload.name.strip(), owner_id=user.id); db.add(business); db.flush(); db.add(BusinessMembership(user_id=user.id, business_id=business.id, is_admin=True)); db.commit(); db.refresh(business); return business
+    user, _ = get_user_session(request, db); business = Business(name=payload.name.strip(), owner_id=user.id, logo_url=payload.logo_url, website=payload.website, industry=payload.industry, description=payload.description); db.add(business); db.flush(); db.add(BusinessMembership(user_id=user.id, business_id=business.id, is_admin=True)); db.commit(); db.refresh(business); return business
 
 @router.get("/{business_id}", response_model=BusinessOut)
 def get_business(business_id: uuid.UUID, request: Request, db: Session = Depends(get_db)) -> Business:
@@ -35,7 +35,7 @@ def get_business(business_id: uuid.UUID, request: Request, db: Session = Depends
 
 @router.patch("/{business_id}", response_model=BusinessOut)
 def update_business(business_id: uuid.UUID, payload: BusinessUpdate, request: Request, db: Session = Depends(get_db)) -> Business:
-    user, _ = get_user_session(request, db); admin_membership(db, user.id, business_id); business = business_for_user(db, user.id, business_id); business.name = payload.name.strip(); db.commit(); db.refresh(business); return business
+    user, _ = get_user_session(request, db); admin_membership(db, user.id, business_id); business = business_for_user(db, user.id, business_id); business.name = payload.name.strip(); business.logo_url = payload.logo_url; business.website = payload.website; business.industry = payload.industry; business.description = payload.description; db.commit(); db.refresh(business); return business
 
 @router.delete("/{business_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_business(business_id: uuid.UUID, request: Request, db: Session = Depends(get_db)) -> None:

@@ -20,7 +20,7 @@ const quickLinks = [
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  if (pathname === "/login" || pathname === "/register" || pathname === "/businesses") return <>{children}</>;
+  if (pathname === "/login" || pathname === "/register") return <>{children}</>;
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -30,7 +30,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return <div className={styles.shell}>
     <aside className={styles.sidebar}>
       <Link className={styles.brand} href="/"><span>z</span>CRM</Link>
-      <Link className={styles.workspace} href="/businesses"><Building2 size={12} /> Switch business</Link>
+      <Link className={styles.workspace} href="/businesses"><Building2 size={12} /> Manage workspaces</Link>
       <Link className={styles.newLead} href="/leads/new"><Plus size={16} /> New lead</Link>
       <nav className={styles.nav} aria-label="Main navigation">
         {mainLinks.map((link) => { const Icon = link.icon; return <Link className={link.match(pathname) ? styles.active : ""} href={link.href} key={link.href}><Icon size={16} />{link.label}</Link>; })}

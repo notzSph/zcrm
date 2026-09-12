@@ -25,6 +25,10 @@ class BusinessOut(BaseModel):
     id: uuid.UUID
     owner_id: uuid.UUID | None = None
     name: str
+    logo_url: str | None = None
+    website: str | None = None
+    industry: str | None = None
+    description: str | None = None
     created_at: datetime
 
 
@@ -60,10 +64,18 @@ class ResetPasswordIn(BaseModel):
 
 class BusinessCreate(BaseModel):
     name: str = Field(min_length=1, max_length=180)
+    logo_url: str | None = Field(default=None, max_length=512)
+    website: str | None = Field(default=None, max_length=512)
+    industry: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=2000)
 
 
 class BusinessUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=180)
+    logo_url: str | None = Field(default=None, max_length=512)
+    website: str | None = Field(default=None, max_length=512)
+    industry: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=2000)
 
 
 class ActiveBusinessUpdate(BaseModel):

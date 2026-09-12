@@ -68,6 +68,10 @@ class Business(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     owner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     name: Mapped[str] = mapped_column(String(180), index=True)
+    logo_url: Mapped[str | None] = mapped_column(String(512))
+    website: Mapped[str | None] = mapped_column(String(512))
+    industry: Mapped[str | None] = mapped_column(String(120), index=True)
+    description: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     memberships: Mapped[list["BusinessMembership"]] = relationship(back_populates="business", cascade="all, delete-orphan", lazy="selectin")
