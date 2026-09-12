@@ -88,6 +88,7 @@ export default function CrmDashboard() {
   const [error, setError] = useState("");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<LeadStatus | null>(null);
+  const [reminderPage, setReminderPage] = useState(0);
 
   const refresh = async () => {
     const response = await fetch("/api/leads", { cache: "no-store" });
@@ -152,6 +153,9 @@ export default function CrmDashboard() {
         new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() &&
       +new Date(reminder.due_at) < todayEnd,
   );
+  const reminderPageCount = Math.max(1, Math.ceil(reminders.length / 4));
+  const visibleReminders = reminders.slice(reminderPage * 4, reminderPage * 4 + 4);
+  useEffect(() => { setReminderPage(0); }, [reminders.length]);
 
   async function createLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -304,6 +308,13 @@ export default function CrmDashboard() {
         </div>
       </section>
 
+      <section className={styles.snapshotCard}>
+        <span><ActivityIcon size={14} /> Pipeline snapshot</span>
+        <strong>{leads.length}</strong>
+        <small>Total lead records</small>
+        <div><span>{leads.filter((lead) => !outcomes.includes(lead.status)).length} open</span><span>{dueToday.length} due today</span></div>
+      </section>
+
       <section className={styles.reminderStrip}>
         <div className={styles.reminderTitle}>
           <Bell size={17} />
@@ -315,7 +326,7 @@ export default function CrmDashboard() {
           </div>
         </div>
         <div className={styles.reminderItems}>
-          {reminders.slice(0, 4).map(({ reminder, lead }) => (
+          {visibleReminders.map(({ reminder, lead }) => (
             <button
               className={
                 +new Date(reminder.due_at) < todayEnd
@@ -336,6 +347,7 @@ export default function CrmDashboard() {
             </p>
           )}
         </div>
+        {reminderPageCount > 1 && <div className={styles.reminderPagination}><button onClick={() => setReminderPage((page) => Math.max(0, page - 1))} disabled={reminderPage === 0} aria-label="Previous follow-ups">←</button><span>{reminderPage + 1} / {reminderPageCount}</span><button onClick={() => setReminderPage((page) => Math.min(reminderPageCount - 1, page + 1))} disabled={reminderPage === reminderPageCount - 1} aria-label="Next follow-ups">→</button></div>}
       </section>
 
       </div>
@@ -412,7 +424,7 @@ export default function CrmDashboard() {
 
       <footer className={styles.poweredBy}>
         <span>Powered by</span>
-        <Image src="/brand/zs-mark.svg" alt="zSpinach" width={18} height={18} />
+        <Image src="/brand/zspinach.svg" alt="zSpinach" width={18} height={18} />
         <strong>zSpinach</strong>
       </footer>
 

@@ -489,6 +489,20 @@
 .activityRow strong { color: $zTextSoft; font-size: 11px; line-height: 1.4; }
 .activityRow small { color: $zTextMuted; font-size: 10px; }
 .noActivity { margin: 0; color: $zTextMuted; font-size: 11px; }
+.dashboardTop { grid-template-columns: minmax(0,1.1fr) minmax(190px,.55fr) minmax(300px,1fr); }
+.snapshotCard { display:grid; align-content:center; gap:8px; min-width:0; padding:20px; border:1px solid $zLine; border-radius:12px; background:linear-gradient(145deg,rgba($zBg1,.96),rgba($zBg2,.8)); }
+.snapshotCard > span { display:flex; align-items:center; gap:6px; color:$zLavender; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
+.snapshotCard > strong { color:$zText; font:500 30px var(--font-mono); }
+.snapshotCard > small { color:$zTextMuted; font-size:10px; }
+.snapshotCard > div { display:flex; flex-wrap:wrap; gap:6px; margin-top:5px; }
+.snapshotCard > div span { padding:4px 6px; color:$zCyan; border-radius:4px; background:rgba($zCyan,.09); font:500 10px var(--font-mono); }
+.reminderItems { display:grid; grid-template-columns:1fr; overflow:visible; }
+.reminder, .reminderUrgent { max-width:none; min-width:0; width:100%; min-height:48px; border-right:0; border-bottom:1px solid $zLine; }
+.reminderPagination { display:flex; align-items:center; justify-content:flex-end; gap:8px; padding:8px 12px; color:$zTextMuted; font:500 10px var(--font-mono); border-top:1px solid $zLine; }
+.reminderPagination button { width:24px; height:24px; color:$zTextSoft; border:1px solid $zLine; border-radius:5px; background:$zBg2; }
+.reminderPagination button:disabled { opacity:.35; }
+.board { grid-template-columns:1fr; overflow:visible; }
+.column { min-width:0; }
 @media (max-width: 1020px) { .dashboardTop { grid-template-columns:1fr; } }
 @media (max-width: 700px) {
   .page {
