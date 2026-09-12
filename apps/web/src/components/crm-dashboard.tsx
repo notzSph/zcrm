@@ -18,6 +18,7 @@ import {
   Plus,
   Trash2,
   Trophy,
+  Target as TargetIcon,
   Users,
   UserRoundPlus,
   X,
@@ -28,6 +29,7 @@ import { leadStatusOptions, reminderKindOptions } from "@/lib/options";
 import styles from "./crm-dashboard.module.scss";
 
 const stages: { key: LeadStatus; label: string; short?: string; icon: LucideIcon }[] = [
+  { key: LeadStatus.Target, label: "Target", icon: TargetIcon },
   { key: LeadStatus.Connected, label: "Connected", icon: UserRoundPlus },
   { key: LeadStatus.Contacted, label: "Contacted", icon: MessageSquareText },
   { key: LeadStatus.Meeting, label: "Meeting", icon: CalendarDays },

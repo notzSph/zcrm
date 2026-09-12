@@ -1,6 +1,7 @@
 import { LeadStatus, ReminderKind } from "./types";
 
 export const leadStatusOptions = [
+  { value: LeadStatus.Target, label: "Target" },
   { value: LeadStatus.Connected, label: "Connected" },
   { value: LeadStatus.Contacted, label: "Contacted" },
   { value: LeadStatus.Meeting, label: "Meeting" },

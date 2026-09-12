@@ -8,7 +8,7 @@ import { LeadStatus, type Lead } from "@/lib/types";
 import styles from "./lead-pages.module.scss";
 
 const filters: { value: "all" | LeadStatus; label: string }[] = [
-  { value: "all", label: "All leads" }, { value: LeadStatus.Connected, label: "Connected" }, { value: LeadStatus.Contacted, label: "Contacted" }, { value: LeadStatus.Meeting, label: "Meeting" }, { value: LeadStatus.Proposal, label: "Proposal" }, { value: LeadStatus.Won, label: "Won" }, { value: LeadStatus.Lost, label: "Lost" }, { value: LeadStatus.Nurture, label: "Nurture" },
+  { value: "all", label: "All leads" }, { value: LeadStatus.Target, label: "Target" }, { value: LeadStatus.Connected, label: "Connected" }, { value: LeadStatus.Contacted, label: "Contacted" }, { value: LeadStatus.Meeting, label: "Meeting" }, { value: LeadStatus.Proposal, label: "Proposal" }, { value: LeadStatus.Won, label: "Won" }, { value: LeadStatus.Lost, label: "Lost" }, { value: LeadStatus.Nurture, label: "Nurture" },
 ];
 
 function upcoming(lead: Lead) { return lead.reminders.find((item) => !item.completed_at); }

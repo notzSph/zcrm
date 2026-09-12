@@ -9,6 +9,7 @@ from .core.db import Base
 
 
 class LeadStatus(str, enum.Enum):
+    target = "target"
     connected = "connected"
     contacted = "contacted"
     meeting = "meeting"
@@ -121,7 +122,7 @@ class Lead(Base):
     tags: Mapped[list] = mapped_column(JSON, default=list)
     estimated_value: Mapped[float | None] = mapped_column(Numeric(12, 2))
     external_ref: Mapped[str | None] = mapped_column(String(255), index=True)
-    status: Mapped[LeadStatus] = mapped_column(Enum(LeadStatus), default=LeadStatus.connected, index=True)
+    status: Mapped[LeadStatus] = mapped_column(Enum(LeadStatus), default=LeadStatus.target, index=True)
     next_action: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

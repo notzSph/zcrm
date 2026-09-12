@@ -1,4 +1,5 @@
 export enum LeadStatus {
+  Target = "target",
   Connected = "connected",
   Contacted = "contacted",
   Meeting = "meeting",
