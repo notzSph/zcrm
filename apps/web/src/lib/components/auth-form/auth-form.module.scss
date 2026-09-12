@@ -1,0 +1,116 @@
+@use "@/lib/styles/variables" as *;
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(119, 76, 255, 0.16),
+      transparent 35%
+    ),
+    $zBg0;
+}
+.card {
+  width: min(100%, 430px);
+  padding: 36px;
+  background: rgba($zBg1, 0.88);
+  border: 1px solid $zLine;
+  border-radius: 18px;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.3);
+}
+.mark {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: $zText;
+  font: 500 22px var(--font-mono);
+  letter-spacing: -0.08em;
+  margin-bottom: 40px;
+}
+.mark img {
+  width: 23px;
+  height: 23px;
+}
+.mark span {
+  color: $zViolet;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $zViolet;
+  font: 500 12px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.card h1 {
+  margin: 14px 0 9px;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+}
+.card > p {
+  margin: 0 0 30px;
+  color: $zTextSoft;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.card form {
+  display: grid;
+  gap: 17px;
+}
+.card label {
+  display: grid;
+  gap: 8px;
+  color: $zTextSoft;
+  font-size: 12px;
+  font-weight: 700;
+}
+.card input {
+  width: 100%;
+  padding: 12px 13px;
+  color: $zText;
+  background: $zBg2;
+  border: 1px solid $zLine;
+  border-radius: 9px;
+  outline: none;
+}
+.card input:focus {
+  border-color: $zViolet;
+  box-shadow: 0 0 0 3px rgba($zViolet, 0.14);
+}
+.card button {
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 9px;
+  color: white;
+  background: $zViolet;
+  font-weight: 800;
+}
+.card button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.error {
+  margin: -4px 0 0;
+  color: #ff899a;
+  font-size: 13px;
+}
+.authLink {
+  margin: 20px 0 0 !important;
+  color: $zTextMuted !important;
+  font-size: 11px !important;
+  text-align: center;
+}
+.authLink a {
+  color: $zLavender;
+}
+.authLink a:hover {
+  color: $white;
+}

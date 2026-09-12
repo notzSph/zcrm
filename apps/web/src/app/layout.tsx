@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { JetBrains_Mono, Manrope } from "next/font/google";
-import AppShell from "@/components/app-shell";
+import AppShell from "@/lib/components/app-shell/app-shell";
 import "@/lib/styles/breakpoints.scss";
 import "@/lib/styles/colors.scss";
 import "@/lib/styles/core.scss";
@@ -36,7 +36,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${manrope.variable} ${mono.variable}`}>
-      <body><Suspense fallback={children}><AppShell>{children}</AppShell></Suspense></body>
+      <body>
+        <a className="skip-link" href="#main-content">Skip to main content</a>
+        <Suspense fallback={<div id="main-content">{children}</div>}>
+          <AppShell>{children}</AppShell>
+        </Suspense>
+      </body>
     </html>
   );
 }

@@ -1,0 +1,359 @@
+@use "@/lib/styles/variables" as *;
+
+.page {
+  max-width: 1500px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px clamp(18px, 4vw, 54px) 54px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: $zLavender;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.header h1 {
+  margin-top: 8px;
+  color: $zText;
+  font-size: 31px;
+  letter-spacing: -0.06em;
+}
+.header p {
+  margin-top: 7px;
+  color: $zTextSoft;
+  font-size: 13px;
+}
+.controls {
+  display: flex;
+  gap: 6px;
+}
+.controls button {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  color: $zTextSoft;
+  border: 1px solid $zLine;
+  border-radius: 7px;
+  background: $zBg1;
+}
+.controls button:hover {
+  background: $zBg2;
+}
+.controls .todayButton {
+  display: block;
+  width: auto;
+  padding: 0 12px;
+  color: $zLavender;
+  font-size: 11px;
+}
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 18px;
+  border: 1px solid $zLine;
+  border-radius: 10px;
+  background: $zBg1;
+  overflow: hidden;
+}
+.summary div {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-right: 1px solid $zLine;
+  color: $zLavender;
+}
+.summary div:last-child {
+  border-right: 0;
+}
+.summary span {
+  color: $zTextMuted;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.summary strong {
+  color: $zText;
+  font: 600 18px var(--font-mono);
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 295px;
+  gap: 14px;
+}
+.calendar,
+.agenda {
+  border: 1px solid $zLine;
+  border-radius: 11px;
+  background: $zBg1;
+  overflow: hidden;
+}
+.weekdays,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.weekdays {
+  border-bottom: 1px solid $zLine;
+}
+.weekdays span {
+  padding: 10px;
+  color: $zTextMuted;
+  font-size: 9px;
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.day {
+  min-height: 128px;
+  padding: 7px;
+  border-right: 1px solid rgba($zLine, 0.7);
+  border-bottom: 1px solid rgba($zLine, 0.7);
+  background: rgba($zBg0, 0.16);
+}
+.day:nth-child(7n) {
+  border-right: 0;
+}
+.dayNumber {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  color: $zTextMuted;
+  border-radius: 50%;
+  font: 500 10px var(--font-mono);
+}
+.today .dayNumber {
+  color: $zBg0;
+  background: $zLavender;
+}
+.outside {
+  background: rgba($black, 0.11);
+}
+.outside .dayNumber {
+  opacity: 0.35;
+}
+.dayItems {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+.event {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 5px;
+  padding: 5px;
+  color: $zTextSoft;
+  border-left: 2px solid $zCyan;
+  border-radius: 3px;
+  background: rgba($zCyan, 0.08);
+  font-size: 9px;
+  line-height: 1.25;
+}
+.event:hover {
+  background: rgba($zCyan, 0.16);
+}
+.event b {
+  grid-row: span 2;
+  color: $zCyan;
+  font: 500 9px var(--font-mono);
+}
+.event span {
+  overflow: hidden;
+  color: $zText;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event small {
+  overflow: hidden;
+  color: $zTextMuted;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event[data-kind="meeting"] {
+  border-color: $zOrange;
+  background: rgba($zOrange, 0.09);
+}
+.event[data-kind="proposal"] {
+  border-color: $zLavender;
+  background: rgba($zViolet, 0.1);
+}
+.event[data-kind="check_in"] {
+  border-color: $zGreen;
+  background: rgba($zGreen, 0.08);
+}
+.more {
+  color: $zTextMuted;
+  font-size: 9px;
+  text-align: center;
+}
+.agendaHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  color: $zLavender;
+  border-bottom: 1px solid $zLine;
+}
+.agendaHead span {
+  color: $zTextMuted;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.agendaHead h2 {
+  margin-top: 4px;
+  color: $zText;
+  font-size: 15px;
+}
+.agendaItem {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  gap: 9px;
+  align-items: center;
+  padding: 11px 13px;
+  border-bottom: 1px solid rgba($zLine, 0.7);
+}
+.agendaItem:hover {
+  background: $zBg2;
+}
+.dateBadge {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 33px;
+  color: $zLavender;
+  border: 1px solid $zLineStrong;
+  border-radius: 6px;
+  background: $zBg2;
+}
+.dateBadge b {
+  font: 600 12px var(--font-mono);
+}
+.dateBadge small {
+  margin-top: -3px;
+  color: $zTextMuted;
+  font-size: 7px;
+  text-transform: uppercase;
+}
+.agendaItem div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.agendaItem strong {
+  overflow: hidden;
+  color: $zTextSoft;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agendaItem p {
+  overflow: hidden;
+  color: $zTextMuted;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agendaItem em {
+  padding: 3px 4px;
+  color: $zCyan;
+  border-radius: 3px;
+  background: rgba($zCyan, 0.1);
+  font: 500 8px var(--font-mono);
+  font-style: normal;
+  text-transform: uppercase;
+}
+.agendaItem em[data-kind="meeting"] {
+  color: $zOrange;
+  background: rgba($zOrange, 0.1);
+}
+.agendaItem em[data-kind="proposal"] {
+  color: $zLavender;
+  background: rgba($zViolet, 0.12);
+}
+.agendaItem em[data-kind="check_in"] {
+  color: $zGreen;
+  background: rgba($zGreen, 0.1);
+}
+.empty {
+  padding: 32px 14px;
+  color: $zTextMuted;
+  font-size: 11px;
+  text-align: center;
+}
+.calendar,
+.agenda {
+  width: 100%;
+  margin: 0;
+}
+.error {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  color: $zPink;
+  border: 1px solid rgba($zPink, 0.3);
+  border-radius: 8px;
+  background: rgba($zPink, 0.08);
+  font-size: 11px;
+}
+.error button {
+  color: $zText;
+  border: 1px solid $zLine;
+  border-radius: 6px;
+  background: $zBg2;
+  font-size: 10px;
+  padding: 6px 9px;
+}
+
+@media (max-width: 1020px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .agenda {
+    max-height: 370px;
+    overflow: auto;
+  }
+}
+@media (max-width: 700px) {
+  .header {
+    align-items: start;
+    flex-direction: column;
+  }
+  .summary {
+    grid-template-columns: 1fr;
+  }
+  .summary div {
+    border-right: 0;
+    border-bottom: 1px solid $zLine;
+  }
+  .summary div:last-child {
+    border-bottom: 0;
+  }
+  .calendar {
+    overflow-x: auto;
+  }
+  .weekdays,
+  .grid {
+    min-width: 680px;
+  }
+  .day {
+    min-height: 112px;
+  }
+}
