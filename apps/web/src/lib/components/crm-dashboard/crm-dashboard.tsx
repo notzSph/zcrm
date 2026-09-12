@@ -332,10 +332,8 @@ export default function CrmDashboard() {
     <main className={styles.page}>
       <header className={headerClass}>
         <div>
-          <div className={styles.brand}>
-            <span>z</span>CRM
-          </div>
-          <p>Pipeline, no bullshit.</p>
+          <h1 className={styles.brand}>Sales pipeline</h1>
+          <p>Track relationships, move opportunities, and plan your next follow-up.</p>
         </div>
         <div className={styles.headerActions}>
           <Link className={styles.primary} href="/leads/new">

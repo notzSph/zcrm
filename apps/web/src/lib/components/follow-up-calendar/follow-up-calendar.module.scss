@@ -18,7 +18,7 @@
   align-items: center;
   gap: 7px;
   color: $zLavender;
-  font-size: 10px;
+  font-size: .8125rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -26,12 +26,12 @@
   margin-top: 8px;
   color: $zText;
   font-size: 31px;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.035em;
 }
 .header p {
   margin-top: 7px;
   color: $zTextSoft;
-  font-size: 13px;
+  font-size: .9375rem;
 }
 .controls {
   display: flex;
@@ -55,7 +55,7 @@
   width: auto;
   padding: 0 12px;
   color: $zLavender;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .summary {
   display: grid;
@@ -80,13 +80,13 @@
 }
 .summary span {
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .summary strong {
   color: $zText;
-  font: 600 18px var(--font-mono);
+  font: 600 1.25rem var(--font-mono);
 }
 .layout {
   display: grid;
@@ -111,7 +111,7 @@
 .weekdays span {
   padding: 10px;
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   text-align: right;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -134,7 +134,7 @@
   margin-left: auto;
   color: $zTextMuted;
   border-radius: 50%;
-  font: 500 10px var(--font-mono);
+  font: 500 .8125rem var(--font-mono);
 }
 .today .dayNumber {
   color: $zBg0;
@@ -160,7 +160,7 @@
   border-left: 2px solid $zCyan;
   border-radius: 3px;
   background: rgba($zCyan, 0.08);
-  font-size: 9px;
+  font-size: .75rem;
   line-height: 1.25;
 }
 .event:hover {
@@ -169,7 +169,7 @@
 .event b {
   grid-row: span 2;
   color: $zCyan;
-  font: 500 9px var(--font-mono);
+  font: 500 .75rem var(--font-mono);
 }
 .event span {
   overflow: hidden;
@@ -197,7 +197,7 @@
 }
 .more {
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   text-align: center;
 }
 .agendaHead {
@@ -210,14 +210,14 @@
 }
 .agendaHead span {
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 .agendaHead h2 {
   margin-top: 4px;
   color: $zText;
-  font-size: 15px;
+  font-size: 1rem;
 }
 .agendaItem {
   display: grid;
@@ -241,12 +241,12 @@
   background: $zBg2;
 }
 .dateBadge b {
-  font: 600 12px var(--font-mono);
+  font: 600 .9375rem var(--font-mono);
 }
 .dateBadge small {
   margin-top: -3px;
   color: $zTextMuted;
-  font-size: 7px;
+  font-size: .75rem;
   text-transform: uppercase;
 }
 .agendaItem div {
@@ -257,14 +257,14 @@
 .agendaItem strong {
   overflow: hidden;
   color: $zTextSoft;
-  font-size: 10px;
+  font-size: .8125rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .agendaItem p {
   overflow: hidden;
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -273,7 +273,7 @@
   color: $zCyan;
   border-radius: 3px;
   background: rgba($zCyan, 0.1);
-  font: 500 8px var(--font-mono);
+  font: 500 .75rem var(--font-mono);
   font-style: normal;
   text-transform: uppercase;
 }
@@ -292,7 +292,7 @@
 .empty {
   padding: 32px 14px;
   color: $zTextMuted;
-  font-size: 11px;
+  font-size: .875rem;
   text-align: center;
 }
 .calendar,
@@ -311,14 +311,14 @@
   border: 1px solid rgba($zPink, 0.3);
   border-radius: 8px;
   background: rgba($zPink, 0.08);
-  font-size: 11px;
+  font-size: .875rem;
 }
 .error button {
   color: $zText;
   border: 1px solid $zLine;
   border-radius: 6px;
   background: $zBg2;
-  font-size: 10px;
+  font-size: .8125rem;
   padding: 6px 9px;
 }
 
@@ -357,3 +357,22 @@
     min-height: 112px;
   }
 }
+
+/* Readable CRM layout, adapted from zSpinach surfaces and controls. */
+
+.page { max-width: 112rem; padding: 2rem var(--crm-page-padding) 3rem; }
+.layout { grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.5rem; }
+.controls button { min-width: 2.75rem; height: 2.75rem; }
+.calendar { overflow-x: auto; }
+.weekdays, .grid { min-width: 56rem; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.day { min-width: 0; min-height: 10rem; padding: .625rem; }
+.dayNumber { width: 1.875rem; height: 1.875rem; }
+.event { grid-template-columns: minmax(0, 1fr); min-height: 2.75rem; gap: .25rem; padding: .5rem; }
+.event b { grid-row: auto; }
+.event small { font-size: .75rem; }
+.summary div { padding: 1.25rem; }
+.agendaItem { grid-template-columns: 2.75rem minmax(0, 1fr); padding: 1rem; }
+.agendaItem em { grid-column: 2; justify-self: start; }
+.dateBadge { width: 2.5rem; height: 2.5rem; }
+.dateBadge small { margin-top: 0; }
+@media (max-width: 1450px) { .layout { grid-template-columns: minmax(0, 1fr); } .agenda { max-height: none; } }
