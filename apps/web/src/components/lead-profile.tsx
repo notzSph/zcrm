@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, Building2, CalendarClock, Check, ChevronDown, History, Mail, MessageSquare, Pencil, Plus, Trash2, UserRound, X } from "lucide-react";
 import { ActivityType, type Lead, type Reminder } from "@/lib/types";
 import { leadStatusOptions, reminderKindOptions } from "@/lib/options";
@@ -20,11 +21,14 @@ function activityText(type: ActivityType, payload: Record<string, unknown>) {
 }
 
 export default function LeadProfile({ leadId }: { leadId: string }) {
+  const router = useRouter();
   const [lead, setLead] = useState<Lead | null>(null);
   const [missing, setMissing] = useState(false);
   const [panel, setPanel] = useState<"edit" | "reminder" | "interaction" | null>(null);
   const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
   const [showAllActivity, setShowAllActivity] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [editingAttachmentId, setEditingAttachmentId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const loadLead = useCallback(async () => {
     const response = await fetch(`/api/leads/${leadId}`, { cache: "no-store" });
@@ -33,32 +37,44 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
   }, [leadId]);
   useEffect(() => { loadLead(); }, [loadLead]);
 
+  async function refreshPage() {
+    await loadLead();
+    router.refresh();
+  }
+
   async function saveLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!lead) return;
     const form = new FormData(event.currentTarget);
     const response = await fetch(`/api/leads/${lead.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: form.get("company"), contact_name: form.get("contact_name") || null, contact_email: form.get("contact_email") || null, contact_phone: form.get("contact_phone") || null, linkedin_url: form.get("linkedin_url") || null, source: form.get("source") || null, estimated_value: form.get("estimated_value") ? Number(form.get("estimated_value")) : null, status: form.get("status"), next_action: form.get("next_action") || null }) });
     if (!response.ok) { setError("Could not save changes."); return; }
-    setPanel(null); await loadLead();
+    setPanel(null); await refreshPage();
   }
   async function addReminder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!lead) return;
     const form = new FormData(event.currentTarget);
     const response = await fetch(`/api/leads/${lead.id}/reminders`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: form.get("title"), kind: form.get("kind"), due_at: new Date(String(form.get("due_at"))).toISOString() }) });
     if (!response.ok) { setError("Could not add reminder."); return; }
-    setPanel(null); await loadLead();
+    setPanel(null); await refreshPage();
   }
   async function addInteraction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!lead) return;
     const form = new FormData(event.currentTarget);
     const response = await fetch(`/api/leads/${lead.id}/interactions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ interaction_type: form.get("interaction_type"), body: form.get("body"), external_ref: form.get("external_ref") || null }) });
     if (!response.ok) { setError("Could not add interaction."); return; }
-    setPanel(null); await loadLead();
+    setPanel(null); await refreshPage();
   }
   async function uploadAttachment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!lead) return;
-    const form = new FormData(event.currentTarget); const response = await fetch(`/api/leads/${lead.id}/attachments`, { method: "POST", body: form });
-    if (!response.ok) { const data = await response.json().catch(() => ({})); setError(data.detail || "Could not upload attachment."); return; }
-    event.currentTarget.reset(); await loadLead();
+    if (uploading) return;
+    setUploading(true);
+    try {
+      const formElement = event.currentTarget;
+      const form = new FormData(formElement); const response = await fetch(`/api/leads/${lead.id}/attachments`, { method: "POST", body: form });
+      if (!response.ok) { const data = await response.json().catch(() => ({})); setError(data.detail || "Could not upload attachment."); return; }
+      formElement.reset(); await refreshPage();
+    } finally {
+      setUploading(false);
+    }
   }
   async function deleteLead() {
     if (!lead || !window.confirm("Delete this lead and its activity history? This cannot be undone.")) return;
@@ -69,21 +85,34 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
   async function completeReminder(reminder: Reminder) {
     const response = await fetch(`/api/reminders/${reminder.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ completed: true }) });
     if (!response.ok) { setError("Could not complete reminder."); return; }
-    await loadLead();
+    await refreshPage();
   }
   async function saveReminder(event: FormEvent<HTMLFormElement>, reminderId: string) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const response = await fetch(`/api/reminders/${reminderId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: form.get("title"), kind: form.get("kind"), due_at: new Date(String(form.get("due_at"))).toISOString() }) });
     if (!response.ok) { setError("Could not save reminder changes."); return; }
-    setEditingReminderId(null); await loadLead();
+    setEditingReminderId(null); await refreshPage();
   }
   async function deleteReminder(reminder: Reminder) {
     if (!window.confirm(`Delete “${reminder.title}”?`)) return;
     const response = await fetch(`/api/reminders/${reminder.id}`, { method: "DELETE" });
     if (!response.ok) { setError("Could not delete reminder."); return; }
     if (editingReminderId === reminder.id) setEditingReminderId(null);
-    await loadLead();
+    await refreshPage();
+  }
+  async function saveAttachment(event: FormEvent<HTMLFormElement>, attachmentId: string) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const response = await fetch(`/api/attachments/${attachmentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: form.get("filename"), kind: form.get("kind") }) });
+    if (!response.ok) { setError("Could not update attachment."); return; }
+    setEditingAttachmentId(null); await refreshPage();
+  }
+  async function deleteAttachment(attachmentId: string, filename: string) {
+    if (!window.confirm(`Delete “${filename}”?`)) return;
+    const response = await fetch(`/api/attachments/${attachmentId}`, { method: "DELETE" });
+    if (!response.ok) { setError("Could not delete attachment."); return; }
+    await refreshPage();
   }
   if (missing) return <main className={styles.page}><Link className={styles.back} href="/leads"><ArrowLeft size={15} /> Lead directory</Link><div className={styles.empty}><Building2 size={20} /> Lead not found.</div></main>;
   if (!lead) return <main className={styles.page}><div className={styles.loading}>Loading lead profile…</div></main>;
@@ -107,6 +136,6 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
     <section className={styles.timeline}><div className={styles.timelineHead}><div><span>Follow-ups</span><h2>{openReminders.length} open reminder{openReminders.length === 1 ? "" : "s"}</h2></div><button className={styles.iconAction} onClick={() => setPanel("reminder")} title="Add reminder"><Plus size={17} /></button></div>{lead.reminders.length ? lead.reminders.map((reminder) => editingReminderId === reminder.id ? <form className={styles.reminderEdit} key={reminder.id} onSubmit={(event) => saveReminder(event, reminder.id)}><input name="title" defaultValue={reminder.title} required autoFocus /><select name="kind" defaultValue={reminder.kind}>{reminderKindOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><input name="due_at" type="datetime-local" defaultValue={localDateTime(reminder.due_at)} required /><button className={styles.saveReminder}><Check size={14} /> Save</button><button type="button" className={styles.reminderControl} onClick={() => setEditingReminderId(null)} title="Cancel"><X size={15} /></button></form> : <div className={styles.timelineRow} key={reminder.id}><span className={reminder.completed_at ? styles.doneDot : styles.dot} /><div><strong>{reminder.title}</strong><small><em className={styles.reminderChip}>{reminder.kind.replace("_", " ")}</em>{fullDate(reminder.due_at)}{reminder.completed_at ? " · completed" : ""}</small></div><div className={styles.reminderControls}>{!reminder.completed_at && <button className={styles.reminderControl} onClick={() => completeReminder(reminder)} title="Complete reminder"><Check size={15} /></button>}<button className={styles.reminderControl} onClick={() => setEditingReminderId(reminder.id)} title="Edit reminder"><Pencil size={14} /></button><button className={`${styles.reminderControl} ${styles.reminderDelete}`} onClick={() => deleteReminder(reminder)} title="Delete reminder"><Trash2 size={14} /></button></div></div>) : <div className={styles.empty}><Bell size={18} /> No follow-ups scheduled yet. Add one now.</div>}</section>
     <section className={styles.timeline}><div className={styles.timelineHead}><div><span>Activity history</span><h2>{lead.activities.length} recorded event{lead.activities.length === 1 ? "" : "s"}</h2></div><History size={18} /></div>{visibleActivities.length ? visibleActivities.map((activity) => <div className={styles.timelineRow} key={activity.id}><span className={styles.dot} /><div><strong>{activityText(activity.event_type, activity.payload)}</strong><small>{fullDate(activity.created_at)}</small></div></div>) : <div className={styles.empty}><History size={18} /> History starts with the next change.</div>}{lead.activities.length > 6 && <button className={styles.showMore} onClick={() => setShowAllActivity(!showAllActivity)}>{showAllActivity ? "Show less" : `Show ${lead.activities.length - 6} older events`}<ChevronDown size={15} /></button>}</section>
     <section className={styles.timeline}><div className={styles.timelineHead}><div><span>Interactions</span><h2>{lead.interactions.length} recorded interaction{lead.interactions.length === 1 ? "" : "s"}</h2></div><MessageSquare size={18} /></div>{lead.interactions.length ? lead.interactions.map((interaction) => <div className={styles.timelineRow} key={interaction.id}><span className={styles.dot} /><div><strong>{interaction.interaction_type.replaceAll("_", " ")}</strong><p>{interaction.body}</p><small>{fullDate(interaction.occurred_at)}{interaction.external_ref ? ` · ${interaction.external_ref}` : ""}</small></div></div>) : <div className={styles.empty}><MessageSquare size={18} /> No interactions recorded yet.</div>}</section>
-    <section className={styles.timeline}><div className={styles.timelineHead}><div><span>Attachments</span><h2>{lead.attachments.length} file{lead.attachments.length === 1 ? "" : "s"}</h2></div></div>{lead.attachments.map((attachment) => <div className={styles.timelineRow} key={attachment.id}><span className={styles.dot} /><div><strong><a href={`/api/attachments/${attachment.id}/download`}>{attachment.filename}</a></strong><small>{attachment.kind} · {(attachment.size_bytes / 1024).toFixed(1)} KB · {fullDate(attachment.created_at)}</small></div></div>)}<form className={styles.quickReminderForm} onSubmit={uploadAttachment}><select name="kind" defaultValue="quotation"><option value="quotation">Quotation</option><option value="proposal">Proposal</option><option value="document">Document</option></select><input name="file" type="file" required /><button><Plus size={15} /> Upload file</button></form></section>
+    <section className={styles.timeline}><div className={styles.timelineHead}><div><span>Attachments</span><h2>{lead.attachments.length} file{lead.attachments.length === 1 ? "" : "s"}</h2></div></div>{lead.attachments.map((attachment) => editingAttachmentId === attachment.id ? <form className={styles.reminderEdit} key={attachment.id} onSubmit={(event) => saveAttachment(event, attachment.id)}><input name="filename" defaultValue={attachment.filename} required autoFocus /><select name="kind" defaultValue={attachment.kind}><option value="quotation">Quotation</option><option value="proposal">Proposal</option><option value="document">Document</option></select><button className={styles.reminderControl} title="Save attachment"><Check size={14} /></button><button type="button" className={styles.reminderControl} onClick={() => setEditingAttachmentId(null)} title="Cancel"><X size={15} /></button></form> : <div className={styles.timelineRow} key={attachment.id}><span className={styles.dot} /><div><strong><a href={`/api/attachments/${attachment.id}/download`}>{attachment.filename}</a></strong><small>{attachment.kind} · {(attachment.size_bytes / 1024).toFixed(1)} KB · {fullDate(attachment.created_at)}</small></div><div className={styles.reminderControls}><button className={styles.reminderControl} onClick={() => setEditingAttachmentId(attachment.id)} title="Edit attachment"><Pencil size={13} /></button><button className={`${styles.reminderControl} ${styles.reminderDelete}`} onClick={() => deleteAttachment(attachment.id, attachment.filename)} title="Delete attachment"><Trash2 size={13} /></button></div></div>)}<form className={styles.quickReminderForm} onSubmit={uploadAttachment}><select name="kind" defaultValue="quotation" disabled={uploading}><option value="quotation">Quotation</option><option value="proposal">Proposal</option><option value="document">Document</option></select><input name="file" type="file" required disabled={uploading} /><button disabled={uploading}>{uploading ? "Uploading…" : <><Plus size={15} /> Upload file</>}</button></form></section>
   </main>;
 }

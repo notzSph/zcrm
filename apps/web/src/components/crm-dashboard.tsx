@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity as ActivityIcon,
   AlarmClock,
@@ -79,6 +80,7 @@ function reminderState(value: string) {
 }
 
 export default function CrmDashboard() {
+  const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selected, setSelected] = useState<Lead | null>(null);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
@@ -102,6 +104,7 @@ export default function CrmDashboard() {
     setSelected((current) =>
       current ? (data.find((lead) => lead.id === current.id) ?? null) : null,
     );
+    router.refresh();
   };
 
   const refreshLead = async (leadId: string) => {

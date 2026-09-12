@@ -218,4 +218,9 @@ class AttachmentOut(BaseModel):
     content_type: str
     size_bytes: int
     kind: str
+
+
+class AttachmentUpdate(BaseModel):
+    filename: str | None = Field(default=None, min_length=1, max_length=255)
+    kind: str | None = Field(default=None, min_length=1, max_length=64)
     created_at: datetime

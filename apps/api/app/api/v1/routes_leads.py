@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 from app.domain_models import Activity, ActivityType, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, Reminder, ReminderKind
-from app.domain_schemas import ActivityOut, AttachmentOut, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate
+from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate
 from app.security import RequestContext, get_db, require_context
 
 router = APIRouter(tags=["crm"])
@@ -80,6 +80,18 @@ def download_attachment(attachment_id: uuid.UUID, context: RequestContext = Depe
     path = UPLOADS_DIR / str(context.business.id) / attachment.storage_key
     if not path.is_file(): raise HTTPException(status_code=404, detail="Attachment file missing")
     return FileResponse(path, media_type=attachment.content_type, filename=attachment.filename)
+
+@router.patch("/attachments/{attachment_id}", response_model=AttachmentOut)
+def update_attachment(attachment_id: uuid.UUID, payload: AttachmentUpdate, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> LeadAttachment:
+    attachment = attachment_for_business(db, attachment_id, context.business.id)
+    changes = payload.model_dump(exclude_unset=True)
+    if "filename" in changes:
+        filename = Path(changes["filename"]).name
+        if not filename or filename in {".", ".."}: raise HTTPException(status_code=400, detail="Invalid filename")
+        changes["filename"] = filename
+    for key, value in changes.items(): setattr(attachment, key, value)
+    db.commit(); db.refresh(attachment)
+    return attachment
 
 @router.delete("/attachments/{attachment_id}", status_code=204)
 def delete_attachment(attachment_id: uuid.UUID, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> None:
