@@ -91,7 +91,7 @@ export default function CrmDashboard() {
   const [dragTarget, setDragTarget] = useState<LeadStatus | null>(null);
   const [reminderPage, setReminderPage] = useState(0);
 
-  const refresh = async (hardRefresh = true) => {
+  const refresh = async (hardRefresh = true, syncSelected = true) => {
     const response = await fetch("/api/leads", { cache: "no-store" });
     if (response.status === 401) {
       window.location.assign("/login");
@@ -103,9 +103,11 @@ export default function CrmDashboard() {
     }
     const data = (await response.json()) as Lead[];
     setLeads(data);
-    setSelected((current) =>
-      current ? (data.find((lead) => lead.id === current.id) ?? null) : null,
-    );
+    if (syncSelected) {
+      setSelected((current) =>
+        current ? (data.find((lead) => lead.id === current.id) ?? null) : null,
+      );
+    }
     if (hardRefresh) router.refresh();
   };
 
@@ -122,7 +124,7 @@ export default function CrmDashboard() {
 
   useEffect(() => {
     refresh().finally(() => setLoading(false));
-    const interval = window.setInterval(() => { if (!document.hidden) refresh(false); }, 5000);
+    const interval = window.setInterval(() => { if (!document.hidden) refresh(false, false); }, 5000);
     return () => window.clearInterval(interval);
   }, []);
 

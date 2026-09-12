@@ -48,9 +48,11 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
   }, [leadId, router]);
   useEffect(() => {
     loadLead();
-    const interval = window.setInterval(() => { if (!document.hidden) loadLead(); }, 5000);
+    const interval = window.setInterval(() => {
+      if (!document.hidden && !panel && !editingReminderId && !editingAttachmentId && !uploading) loadLead();
+    }, 5000);
     return () => window.clearInterval(interval);
-  }, [loadLead]);
+  }, [loadLead, panel, editingReminderId, editingAttachmentId, uploading]);
 
   async function refreshPage() {
     await loadLead();
