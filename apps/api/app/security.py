@@ -19,6 +19,19 @@ SESSION_COOKIE_NAME = "zcrm_session"
 SESSION_LIFETIME_DAYS = 30
 password_hasher = PasswordHasher()
 
+def agent_business_scope(x_api_key: str | None) -> uuid.UUID | None | bool:
+    """Return None for unrestricted JayZoo access, a UUID for scoped CAIO access, or False."""
+    jayzoo_key = os.getenv("JAYZOO_API_KEY", "")
+    if x_api_key and jayzoo_key and hmac.compare_digest(x_api_key, jayzoo_key):
+        return None
+    caio_key = os.getenv("CAIO_API_KEY", "")
+    if x_api_key and caio_key and hmac.compare_digest(x_api_key, caio_key):
+        try:
+            return uuid.UUID(os.getenv("CAIO_BUSINESS_ID", ""))
+        except ValueError as exc:
+            raise HTTPException(status_code=500, detail="CAIO_BUSINESS_ID is not configured") from exc
+    return False
+
 def hash_password(password: str) -> str:
     salt = os.urandom(16)
     key = hashlib.scrypt(password.encode(), salt=salt, n=2**14, r=8, p=1, dklen=64)
@@ -77,12 +90,14 @@ def get_user_session(request: Request, db: Session = Depends(get_db)) -> tuple[U
     return session.user, session
 
 def require_context(request: Request, x_api_key: str | None = Header(default=None), x_business_id: str | None = Header(default=None), db: Session = Depends(get_db)) -> RequestContext:
-    api_key = os.getenv("JAYZOO_API_KEY", "")
-    if x_api_key and api_key and hmac.compare_digest(x_api_key, api_key):
+    agent_scope = agent_business_scope(x_api_key)
+    if agent_scope is not False:
         try:
             business_id = uuid.UUID(x_business_id or "")
         except ValueError as exc:
             raise HTTPException(status_code=400, detail="X-Business-ID is required for agent access") from exc
+        if agent_scope is not None and business_id != agent_scope:
+            raise HTTPException(status_code=403, detail="API key is not authorized for this business")
         business = db.get(Business, business_id)
         if not business:
             raise HTTPException(status_code=404, detail="Business not found")
@@ -99,11 +114,13 @@ def require_context(request: Request, x_api_key: str | None = Header(default=Non
     return RequestContext(business=business, user=user)
 
 def require_agent_context(x_api_key: str | None = Header(default=None), x_business_id: str | None = Header(default=None), db: Session = Depends(get_db)) -> RequestContext:
-    api_key = os.getenv("JAYZOO_API_KEY", "")
-    if not api_key or not x_api_key or not hmac.compare_digest(x_api_key, api_key):
+    agent_scope = agent_business_scope(x_api_key)
+    if agent_scope is False:
         raise HTTPException(status_code=401, detail="Valid X-API-Key required")
     try: business_id = uuid.UUID(x_business_id or "")
     except ValueError as exc: raise HTTPException(status_code=400, detail="X-Business-ID is required") from exc
+    if agent_scope is not None and business_id != agent_scope:
+        raise HTTPException(status_code=403, detail="API key is not authorized for this business")
     business = db.get(Business, business_id)
     if not business: raise HTTPException(status_code=404, detail="Business not found")
     return RequestContext(business=business, user=None, is_agent=True)
