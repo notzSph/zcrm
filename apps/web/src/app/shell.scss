@@ -6,11 +6,20 @@ html, body { min-height: 100%; }
 
 body {
   margin: 0;
-  background: $zBg0;
+  background:
+    radial-gradient(circle at 85% -10%, rgba($zViolet, .13), transparent 28rem),
+    radial-gradient(circle at 10% 100%, rgba($zCyan, .04), transparent 24rem),
+    $zBg0;
   color: $zText;
   font-family: var(--font-mono), monospace !important;
   font-weight: 500;
 }
+
+::selection { color: $zBg0; background: $zLavender; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid $zLavender; outline-offset: 3px; }
+button:disabled { cursor: not-allowed; }
 
 p { font-family: var(--font-manrope), Arial, sans-serif; }
 
