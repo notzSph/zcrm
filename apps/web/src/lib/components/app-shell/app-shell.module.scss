@@ -35,7 +35,7 @@
 }
 .workspaceSwitcher label {
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -47,7 +47,7 @@
   border: 1px solid $zLine;
   border-radius: 7px;
   background: $zBg2;
-  font-size: 10px;
+  font-size: .8125rem;
   outline: 0;
 }
 .workspaceSwitcher select:focus {
@@ -58,7 +58,7 @@
   align-items: center;
   gap: 5px;
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .workspace:hover {
   color: $zLavender;
@@ -74,7 +74,7 @@
   border-radius: 7px;
   background: linear-gradient(110deg, $zViolet, #8f75ff);
   box-shadow: 0 9px 22px rgba($zViolet, 0.2);
-  font-size: 11px;
+  font-size: .875rem;
   font-weight: 600;
 }
 .newLead:hover {
@@ -93,7 +93,7 @@
   padding: 0 10px;
   color: $zTextMuted;
   border-radius: 7px;
-  font-size: 11px;
+  font-size: .875rem;
   transition:
     color 0.14s ease,
     background 0.14s ease,
@@ -119,7 +119,7 @@
 .navLabel {
   margin: 0 10px 9px;
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   text-transform: uppercase;
   letter-spacing: 0.11em;
 }
@@ -134,7 +134,7 @@
   color: $zTextMuted;
   background: transparent;
   border-radius: 7px;
-  font-size: 11px;
+  font-size: .875rem;
   text-align: left;
 }
 .logout:hover {
@@ -175,7 +175,7 @@
   .brand {
     flex: 0 0 auto;
     padding: 0;
-    font-size: 18px;
+    font-size: 1.25rem;
   }
   .nav {
     display: flex;
@@ -185,7 +185,7 @@
   .nav a {
     min-height: 34px;
     padding: 0 8px;
-    font-size: 10px;
+    font-size: .8125rem;
     white-space: nowrap;
   }
   .nav:nth-of-type(2) {
@@ -205,7 +205,7 @@
   align-items: center;
   gap: 5px;
   color: $zTextMuted;
-  font: 500 9px var(--font-mono);
+  font: 500 .75rem var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -243,7 +243,7 @@
   border-radius: 6px;
   color: $white;
   background: $zViolet;
-  font: 600 10px var(--font-mono);
+  font: 600 .8125rem var(--font-mono);
   object-fit: cover;
 }
 .workspaceSelect select {
@@ -292,7 +292,7 @@
 .chevron {
   margin-left: auto;
   color: transparent;
-  font-size: 17px;
+  font-size: 1.125rem;
   line-height: 1;
   transition:
     color 0.14s ease,
@@ -326,7 +326,7 @@
   border-radius: 8px;
   color: $white;
   background: linear-gradient(135deg, $zViolet, $zCyan);
-  font: 600 11px var(--font-mono);
+  font: 600 .875rem var(--font-mono);
   object-fit: cover;
 }
 .account div {
@@ -336,14 +336,14 @@
 }
 .account strong {
   color: $zTextSoft;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .account small {
   display: block;
   max-width: 142px;
   overflow: hidden;
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -369,4 +369,33 @@
   .chevron {
     display: none;
   }
+}
+
+/* Readable CRM layout, adapted from zSpinach surfaces and controls. */
+
+/* Desktop navigation remains scrollable on short screens. */
+.sidebar { width: 16rem; padding: 1.5rem 1rem; overflow-y: auto; }
+.content { margin-left: 16rem; min-width: 0; }
+.brand { font-size: 1.5rem; }
+.nav a, .newLead, .logout { min-height: 2.75rem; font-size: .9375rem; }
+.nav a svg { width: 1.125rem; height: 1.125rem; }
+.workspaceSwitcher select { min-height: 2.75rem; font-size: 1rem; }
+.workspaceSwitcher label, .navLabel { font-size: .75rem; letter-spacing: .08em; }
+.workspace { min-height: 2.5rem; font-size: .8125rem; }
+.account strong { overflow-wrap: anywhere; }
+.account small { max-width: 10rem; }
+.sidebarFooter { margin-top: 1.5rem; }
+@media (max-width: 900px) {
+  .sidebar { position: relative; width: 100%; flex-direction: row; flex-wrap: wrap; align-items: center; gap: .75rem; padding: 1rem; overflow: visible; border-right: 0; border-bottom: 1px solid $zLine; }
+  .content { margin-left: 0; }
+  .sidebarHeader { padding: 0; margin: 0; }
+  .liveDot, .divider, .navLabel, .chevron { display: none; }
+  .newLead { margin: 0 0 0 auto; padding: .5rem 1rem; }
+  .workspaceSwitcher { display: grid; width: 100%; margin: 0; padding: .75rem; order: 2; }
+  .nav, .nav:nth-of-type(2) { display: flex; flex-wrap: wrap; gap: .375rem; overflow: visible; }
+  .nav { width: 100%; }
+  .nav a { padding: .5rem .75rem; white-space: normal; }
+  .sidebarFooter { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; margin: 0; padding: .75rem 0 0; order: 3; }
+  .account { padding: 0; min-width: 0; }
+  .logout { display: flex; width: auto; flex-shrink: 0; margin: 0; }
 }
