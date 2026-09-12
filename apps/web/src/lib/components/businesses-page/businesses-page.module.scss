@@ -18,7 +18,7 @@
   align-items: center;
   gap: 7px;
   color: $zLavender;
-  font-size: 10px;
+  font-size: .8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -26,12 +26,12 @@
   margin-top: 9px;
   color: $zText;
   font-size: 32px;
-  letter-spacing: -0.07em;
+  letter-spacing: -0.035em;
 }
 .header p {
   margin-top: 7px;
   color: $zTextMuted;
-  font-size: 13px;
+  font-size: .9375rem;
 }
 .count {
   display: flex;
@@ -45,7 +45,7 @@
 }
 .count span {
   padding-bottom: 3px;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .layout {
   display: grid;
@@ -70,14 +70,14 @@
 .formTitle h2 {
   margin-top: 7px;
   color: $zText;
-  font-size: 17px;
+  font-size: 1.125rem;
 }
 .live {
   display: flex;
   align-items: center;
   gap: 6px;
   color: $zGreen;
-  font-size: 9px;
+  font-size: .75rem;
   text-transform: uppercase;
 }
 .live i {
@@ -137,17 +137,17 @@
   white-space: nowrap;
 }
 .open strong {
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .open small {
   margin-top: 4px;
   color: $zLavender;
-  font-size: 9px;
+  font-size: .75rem;
 }
 .open p {
   margin-top: 5px;
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .open > svg {
   color: $zTextMuted;
@@ -177,7 +177,7 @@
 .empty {
   padding: 45px 20px;
   color: $zTextMuted;
-  font-size: 11px;
+  font-size: .875rem;
   text-align: center;
 }
 .formCard {
@@ -191,7 +191,7 @@
 .formTitle p {
   margin-top: 8px;
   color: $zTextMuted;
-  font-size: 11px;
+  font-size: .875rem;
   line-height: 1.5;
 }
 .formCard form {
@@ -202,7 +202,7 @@
   display: grid;
   gap: 7px;
   color: $zTextSoft;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .formCard input,
 .formCard textarea {
@@ -255,7 +255,7 @@
   min-height: 39px;
   padding: 0 13px;
   border-radius: 8px;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .primary {
   color: $white;
@@ -279,7 +279,7 @@
 .error {
   margin-bottom: 12px;
   color: $zPink;
-  font-size: 11px;
+  font-size: .875rem;
 }
 @media (max-width: 850px) {
   .layout {
@@ -298,3 +298,20 @@
     padding: 18px;
   }
 }
+
+/* Readable CRM layout, adapted from zSpinach surfaces and controls. */
+
+.page { max-width: 100rem; padding: 2rem var(--crm-page-padding) 3rem; }
+.layout { grid-template-columns: minmax(0, 1.25fr) minmax(21rem, .75fr); gap: 1.5rem; align-items: start; }
+.listCard, .formCard { min-width: 0; }
+.formCard { padding: 1.5rem; }
+.formCard input, .formCard textarea { font-size: 1rem; min-height: 3rem; }
+.formCard textarea { min-height: 7rem; }
+.formCard form { gap: 1.25rem; }
+.open { padding: 1rem .5rem; }
+.open strong { font-size: 1rem; }
+.actions button { width: 2.75rem; height: 2.75rem; }
+.primary, .cancel { min-height: 3rem; padding: .625rem 1rem; font-size: .9375rem; }
+.formActions { flex-wrap: wrap; }
+@media (max-width: 1150px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) { .business { grid-template-columns: minmax(0, 1fr); } .actions { justify-content: flex-end; padding-bottom: .5rem; } }

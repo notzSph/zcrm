@@ -19,7 +19,7 @@
   gap: 6px;
   margin-bottom: 17px;
   color: $zTextMuted;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .back:hover {
   color: $zLavender;
@@ -27,23 +27,23 @@
 .header h1 {
   color: $zText;
   font-size: 31px;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.035em;
 }
 .header p {
   margin-top: 8px;
   color: $zTextSoft;
-  font-size: 14px;
+  font-size: 1rem;
 }
 .directoryTotal {
   display: flex;
   align-items: center;
   gap: 7px;
   color: $zTextMuted;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .directoryTotal span {
   color: $zText;
-  font: 600 18px var(--font-mono);
+  font: 600 1.25rem var(--font-mono);
 }
 .filters {
   display: flex;
@@ -67,7 +67,7 @@
   border: 1px solid $zLine;
   border-radius: 6px;
   background: $zBg1;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .filters button span {
   color: $zTextMuted;
@@ -98,7 +98,7 @@
 .listHead {
   color: $zTextMuted;
   border-bottom: 1px solid $zLine;
-  font-size: 10px;
+  font-size: .8125rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -130,7 +130,7 @@
   border: 1px solid $zLineStrong;
   border-radius: 8px;
   background: $zBg3;
-  font: 600 13px var(--font-mono);
+  font: 600 .9375rem var(--font-mono);
 }
 .account div {
   display: grid;
@@ -140,14 +140,14 @@
 .account strong {
   overflow: hidden;
   color: $zText;
-  font-size: 12px;
+  font-size: .9375rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .account small,
 .muted {
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .status {
   justify-self: start;
@@ -155,7 +155,7 @@
   color: $zBlue;
   border-radius: 4px;
   background: rgba($zBlue, 0.1);
-  font: 500 9px var(--font-mono);
+  font: 500 .75rem var(--font-mono);
   font-style: normal;
   text-transform: uppercase;
 }
@@ -188,7 +188,7 @@
   align-items: center;
   gap: 6px;
   color: $zCyan;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .followup > span {
   color: $zTextMuted;
@@ -207,14 +207,14 @@
   border: 1px solid rgba($zPink, 0.3);
   border-radius: 8px;
   background: rgba($zPink, 0.08);
-  font-size: 11px;
+  font-size: .875rem;
 }
 .error button {
   color: $zText;
   border: 1px solid $zLine;
   border-radius: 6px;
   background: $zBg2;
-  font-size: 10px;
+  font-size: .8125rem;
   padding: 6px 9px;
 }
 .loading,
@@ -225,7 +225,7 @@
   gap: 8px;
   min-height: 150px;
   color: $zTextMuted;
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .profileTitle {
   display: flex;
@@ -236,7 +236,7 @@
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  font-size: 18px;
+  font-size: 1.25rem;
 }
 .profileTitle em {
   display: inline-block;
@@ -293,7 +293,7 @@
   gap: 7px;
   margin-bottom: 18px;
   color: $zLavender;
-  font-size: 11px;
+  font-size: .875rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -333,7 +333,7 @@
 .infoCard p {
   margin: 0 0 8px;
   color: $zTextSoft;
-  font-size: 13px;
+  font-size: .9375rem;
   line-height: 1.5;
 }
 .infoCard .muted {
@@ -363,14 +363,14 @@
 }
 .timelineHead span {
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
 .timelineHead h2 {
   margin-top: 5px;
   color: $zText;
-  font-size: 16px;
+  font-size: 1.125rem;
 }
 .timelineRow {
   display: flex;
@@ -401,11 +401,11 @@
 }
 .timelineRow strong {
   color: $zTextSoft;
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .timelineRow small {
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .newLeadCard {
   max-width: 760px;
@@ -428,11 +428,11 @@
 }
 .newLeadIntro span {
   color: $zText;
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .newLeadIntro p {
   color: $zTextMuted;
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .newLeadForm {
   display: grid;
@@ -444,7 +444,7 @@
   display: grid;
   gap: 7px;
   color: $zTextMuted;
-  font-size: 10px;
+  font-size: .8125rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -459,7 +459,7 @@
   border-radius: 7px;
   background: $zBg2;
   outline: none;
-  font-size: 12px;
+  font-size: .9375rem;
   text-transform: none;
   letter-spacing: 0;
 }
@@ -488,14 +488,14 @@
   color: $zLavender !important;
   border-color: rgba($zLavender, 0.35) !important;
   background: rgba($zViolet, 0.13) !important;
-  font-size: 10px !important;
+  font-size: .8125rem !important;
   font-weight: 700;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
 }
 .fieldHint {
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
@@ -520,7 +520,7 @@
   min-height: 37px;
   padding: 0 13px;
   border-radius: 7px;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .formActions button {
   color: $white;
@@ -536,7 +536,7 @@
   grid-column: 1 / -1;
   margin: 0;
   color: $zPink;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .profileHeader {
   display: flex;
@@ -561,7 +561,7 @@
   min-height: 36px;
   padding: 0 11px;
   border-radius: 7px;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .primaryButton {
   color: $white;
@@ -611,11 +611,11 @@
 }
 .panelHead span {
   color: $zText;
-  font-size: 12px;
+  font-size: .9375rem;
 }
 .panelHead p {
   color: $zTextMuted;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .panelHead button {
   color: $zTextMuted;
@@ -637,7 +637,7 @@
   border-radius: 6px;
   background: $zBg2;
   outline: none;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .quickReminderForm button {
   display: inline-flex;
@@ -649,7 +649,7 @@
   color: $white;
   border-radius: 6px;
   background: $zViolet;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .iconAction {
   width: 34px;
@@ -667,7 +667,7 @@
   color: $zLavender;
   border-radius: 3px;
   background: rgba($zViolet, 0.12);
-  font: 500 8px var(--font-mono);
+  font: 500 .75rem var(--font-mono);
   font-style: normal;
   text-transform: uppercase;
 }
@@ -681,7 +681,7 @@
   color: $zLavender;
   border-top: 1px solid $zLine;
   background: $zBg2;
-  font-size: 11px;
+  font-size: .875rem;
 }
 .showMore:hover {
   background: $zBg3;
@@ -734,14 +734,14 @@
   border-radius: 6px;
   background: $zBg2;
   outline: none;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .saveReminder {
   min-width: auto;
   color: $white;
   border-color: $zViolet;
   background: $zViolet;
-  font-size: 10px;
+  font-size: .8125rem;
 }
 .saveReminder:hover {
   background: #856fff;
@@ -818,14 +818,14 @@
   color: $zLavender !important;
   border-color: rgba($zLavender, 0.35) !important;
   background: rgba($zViolet, 0.13) !important;
-  font-size: 10px !important;
+  font-size: .8125rem !important;
   font-weight: 700;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
 }
 .fieldHint {
   color: $zTextMuted;
-  font-size: 9px;
+  font-size: .75rem;
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
@@ -900,4 +900,61 @@
   .newLeadForm .formActions {
     grid-column: 1 / -1;
   }
+}
+
+/* Readable CRM layout, adapted from zSpinach surfaces and controls. */
+
+.page { max-width: 100rem; padding: 2rem var(--crm-page-padding) 3rem; }
+.header h1 { font-size: clamp(1.75rem, 3vw, 2.25rem); }
+.header, .profileHeader { flex-wrap: wrap; }
+.header > div, .profileHeader > div { min-width: 0; }
+.back, .filters button, .primaryButton, .secondaryButton, .deleteButton, .iconAction, .formActions button, .cancel, .showMore { min-height: 2.75rem; }
+.filters { flex-wrap: wrap; overflow: visible; gap: .5rem; }
+.listHead, .row { grid-template-columns: minmax(0, 1.5fr) minmax(7rem, .65fr) minmax(0, 1fr) 1.5rem; padding: 1rem 1.25rem; }
+.row { min-height: 5rem; }
+.account strong { font-size: 1rem; }
+.account small, .followup { overflow-wrap: anywhere; }
+.followup { min-width: 0; align-items: flex-start; }
+.avatar { width: 2.5rem; height: 2.5rem; }
+.status { padding: .375rem .625rem; border-radius: 999px; }
+.profileGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.infoCard { padding: 1.5rem; min-height: 10rem; border-radius: 1rem; background: linear-gradient(135deg, rgba($zBg2,.82), rgba($zBg1,.65)); }
+.infoCard h2 { margin-bottom: 1rem; }
+.infoCard p { font-size: 1rem; overflow-wrap: anywhere; }
+.contactLine { flex-wrap: wrap; }
+.contactLine p:first-child, .contactLine .muted { white-space: normal; overflow-wrap: anywhere; }
+.titleLine { flex-wrap: wrap; }
+.titleLine h1 { white-space: normal; overflow-wrap: anywhere; }
+.profileTitle { min-width: 0; }
+.profileActions { flex-wrap: wrap; }
+.newLeadCard { max-width: 56rem; }
+.newLeadForm { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; padding: 1.5rem; }
+.companyField, .statusField, .newLeadForm label:nth-of-type(3), .newLeadForm label:nth-of-type(4) { grid-column: auto; }
+.newLeadForm label { text-transform: none; letter-spacing: 0; }
+.newLeadForm input, .newLeadForm select, .newLeadForm textarea, .quickReminderForm input, .quickReminderForm select, .reminderEdit input, .reminderEdit select { min-height: 3rem; font-size: 1rem; padding: .75rem; }
+.newLeadForm textarea { min-height: 8rem; }
+.statusSelect { font-size: .875rem !important; }
+.quickReminderForm, .reminderComposer { grid-template-columns: minmax(0, 1fr) minmax(8rem, .55fr); align-items: stretch; gap: .75rem; padding: 1.25rem; }
+.iconField { min-height: 3rem; }
+.iconField input, .iconField select { height: auto; min-height: 3rem; padding: .5rem 0; }
+.reminderEdit { grid-template-columns: minmax(0, 1fr) minmax(8rem, .6fr) minmax(12rem, .8fr) auto auto; }
+.reminderControl, .saveReminder, .panelHead button { min-width: 2.75rem; min-height: 2.75rem; height: auto; }
+.deleteButton, .iconAction { width: 2.75rem; flex-shrink: 0; }
+.timelineHead, .timelineRow { padding: 1.25rem; }
+.timelineRow > div { min-width: 0; overflow-wrap: anywhere; }
+.dot, .doneDot { flex-shrink: 0; }
+@media (max-width: 1150px) { .reminderEdit { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .listHead { display: none; }
+  .row { grid-template-columns: minmax(0, 1fr) auto; gap: .75rem; }
+  .row > em, .followup { grid-column: 1; }
+  .row > svg { grid-column: 2; grid-row: 1 / span 2; }
+  .profileGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .newLeadForm, .quickReminderForm, .reminderComposer, .reminderEdit { grid-template-columns: minmax(0, 1fr); }
+  .newLeadForm label { grid-column: 1 / -1; }
+  .profileTitle { align-items: flex-start; }
+  .profileActions { width: 100%; }
+  .newLeadForm { padding: 1rem; }
 }

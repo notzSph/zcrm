@@ -4,9 +4,7 @@
 :root,
 html,
 body {
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-    overflow-x: hidden;
+    min-height: 100%;
 }
 
 * {
@@ -16,21 +14,21 @@ body {
 }
 
 label {
-    margin-bottom: var.$smallMargin;
+    margin-bottom: 0;
 }
 
 input,
 select {
-    height: var.$inputHeight;
+    min-height: var.$inputHeight;
     font-size: var.$fsSmall;
-    margin-bottom: var.$mediumMargin;
+    margin-bottom: 0;
     padding: var.$mediumMargin var.$smallMargin;
 }
 
 textarea {
-    height: var.$textareaHeight;
+    height: auto;
     min-height: var.$textareaMinHeight;
-    margin-bottom: var.$largeMargin;
+    margin-bottom: 0;
 }
 
 input,

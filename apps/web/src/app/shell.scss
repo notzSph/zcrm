@@ -2,7 +2,13 @@
 
 * { box-sizing: border-box; }
 
+html { font-size: 100%; color-scheme: dark; }
 html, body { min-height: 100%; }
+:root {
+  --font-sans: var(--font-manrope), Arial, sans-serif;
+  --crm-page-padding: clamp(1rem, 2.5vw, 2.5rem);
+  --crm-control-height: 3rem;
+}
 
 body {
   margin: 0;
@@ -11,8 +17,10 @@ body {
     radial-gradient(circle at 10% 100%, rgba($zCyan, .04), transparent 24rem),
     $zBg0;
   color: $zText;
-  font-family: var(--font-mono), monospace !important;
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 400;
 }
 
 ::selection { color: $zBg0; background: $zLavender; }
@@ -40,3 +48,22 @@ button:hover svg, a:hover svg { transform: translateX(1px); }
   *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   button:hover svg, a:hover svg { transform:none; }
 }
+
+/* Application defaults: zSpinach form proportions, not marketing microtype. */
+h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; }
+p { text-wrap: pretty; }
+button, input, select, textarea { line-height: 1.5; }
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  font-size: 1rem;
+  min-width: 0;
+}
+input:not([type="checkbox"]):not([type="radio"]), select { height: auto; }
+textarea { height: auto; resize: vertical; }
+input::placeholder, textarea::placeholder { color: $zTextMuted; opacity: 1; }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid $zLavender;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba($zViolet, .14);
+}
+button:disabled, select:disabled { opacity: .6; }
+svg { flex-shrink: 0; }
