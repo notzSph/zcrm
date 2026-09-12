@@ -1,0 +1,21 @@
+@use "@/lib/styles/variables" as *;
+
+.page {
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  width:min(100% - 32px,720px);
+  min-height:180px;
+  margin:48px auto;
+  padding:24px;
+  color:$zLavender;
+  border:1px solid $zLine;
+  border-radius:14px;
+  background:linear-gradient(145deg,rgba($zBg2,.94),rgba($zBg1,.9));
+}
+.page h1 { color:$zText; font-size:18px; letter-spacing:-.03em; }
+.page p { margin-top:7px; color:$zTextMuted; font-size:12px; line-height:1.6; }
+.page button,.button { display:inline-flex; align-items:center; gap:7px; min-height:38px; margin-top:17px; padding:0 12px; color:$white; border-radius:8px; background:$zViolet; font-size:11px; }
+.spinner { flex:0 0 auto; animation:spin .9s linear infinite; }
+.warning { flex:0 0 auto; color:$zPink; }
+@keyframes spin { to { transform:rotate(360deg); } }
