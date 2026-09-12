@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, CalendarDays, ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
 import type { Lead, Reminder } from "@/lib/types";
@@ -16,7 +16,17 @@ export default function FollowUpCalendar() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  useEffect(() => { fetch("/api/leads", { cache: "no-store" }).then(async (response) => { if (response.status === 401) { window.location.assign("/login"); return []; } if (!response.ok) throw new Error(); return response.json(); }).then(setLeads).catch(() => setError("Could not load follow-ups. Try again.")).finally(() => setLoading(false)); }, []);
+  const loadLeads = useCallback(async () => {
+    const response = await fetch("/api/leads", { cache: "no-store" });
+    if (response.status === 401) { window.location.assign("/login"); return; }
+    if (!response.ok) throw new Error();
+    setLeads(await response.json());
+  }, []);
+  useEffect(() => {
+    loadLeads().catch(() => setError("Could not load follow-ups. Try again.")).finally(() => setLoading(false));
+    const interval = window.setInterval(() => { if (!document.hidden) loadLeads().catch(() => undefined); }, 5000);
+    return () => window.clearInterval(interval);
+  }, [loadLeads]);
 
   const items = useMemo<CalendarItem[]>(() => leads.flatMap((lead) => lead.reminders.filter((reminder) => !reminder.completed_at).map((reminder) => ({ ...reminder, lead }))).sort((a, b) => +new Date(a.due_at) - +new Date(b.due_at)), [leads]);
   const monthItems = items.filter((item) => { const due = new Date(item.due_at); return due.getFullYear() === month.getFullYear() && due.getMonth() === month.getMonth(); });

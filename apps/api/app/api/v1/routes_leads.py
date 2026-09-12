@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-from app.domain_models import Activity, ActivityType, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, Reminder, ReminderKind
+from app.domain_models import Activity, ActivityType, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, Reminder, ReminderKind
 from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate
 from app.security import RequestContext, get_db, require_context
 
@@ -26,6 +26,16 @@ def metadata(_: RequestContext = Depends(require_context)) -> dict[str, list[str
 @router.get("/leads", response_model=list[LeadOut])
 def list_leads(context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> list[Lead]:
     return list(db.scalars(lead_query().where(Lead.business_id == context.business.id).order_by(Lead.updated_at.desc())))
+
+@router.get("/leads/{lead_id}/workspace")
+def lead_workspace(lead_id: uuid.UUID, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> dict[str, str]:
+    if context.user is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    memberships = select(BusinessMembership.business_id).where(BusinessMembership.user_id == context.user.id)
+    lead = db.scalar(select(Lead).where(Lead.id == lead_id, Lead.business_id.in_(memberships)))
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return {"business_id": str(lead.business_id), "business_name": lead.business.name}
 
 @router.post("/leads", response_model=LeadOut, status_code=201)
 def create_lead(payload: LeadCreate, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Lead:

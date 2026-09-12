@@ -685,3 +685,15 @@
     margin: 2px 0 0 20px;
   }
 }
+
+.newLeadForm { gap: 12px; }
+.companyField { grid-column: span 1; }
+.statusSelect { width: fit-content !important; min-width: 116px; padding: 0 11px !important; border-radius: 999px !important; color: $zLavender !important; border-color: rgba($zLavender, .35) !important; background: rgba($zViolet, .13) !important; font-size: 10px !important; font-weight: 700; text-transform: uppercase !important; letter-spacing: .04em !important; }
+.fieldHint { color: $zTextMuted; font-size: 9px; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.newLeadForm textarea { min-height: 66px; }
+.reminderComposer { grid-template-columns: minmax(220px, 1fr) 140px 190px auto; align-items: center; gap: 8px; }
+.iconField { display:flex; align-items:center; gap:8px; min-width:0; min-height:37px; padding:0 10px; color:$zLavender; border:1px solid $zLine; border-radius:8px; background:$zBg2; }
+.iconField:focus-within { border-color:$zViolet; box-shadow:0 0 0 3px rgba($zViolet,.12); }
+.iconField input,.iconField select { min-width:0; min-height:35px; height:35px; flex:1; padding:0; border:0; outline:0; background:transparent; }
+.iconField input::placeholder { color:$zTextMuted; }
+@media (max-width: 720px) { .reminderComposer { grid-template-columns:1fr; }.statusSelect { width:100% !important; }.companyField { grid-column:auto; } }

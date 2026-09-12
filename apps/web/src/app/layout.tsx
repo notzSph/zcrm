@@ -21,6 +21,7 @@ import "@/lib/styles/radius.scss";
 import "@/lib/styles/spacing.scss";
 import "@/lib/styles/text.scss";
 import "@/lib/styles/variables.scss";
+import "@/lib/styles/platform-ui.scss";
 import "@/lib/styles/width.scss";
 import "./shell.scss";
 
