@@ -50,6 +50,12 @@ def login(payload: LoginIn, db: Session = Depends(get_db)) -> LoginOut:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_session(db, user)
     session = db.query(UserSession).filter(UserSession.token_hash == __import__("hashlib").sha256(token.encode()).hexdigest()).one()
+    first_membership = db.query(BusinessMembership).filter(
+        BusinessMembership.user_id == user.id
+    ).order_by(BusinessMembership.created_at, BusinessMembership.id).first()
+    if first_membership:
+        session.active_business_id = first_membership.business_id
+        db.commit()
     return LoginOut(session_token=token, user=serialize_user(db, user, session))
 
 
