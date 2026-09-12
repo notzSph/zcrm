@@ -225,6 +225,11 @@
 .profileTitle h1 {
   margin: 0;
 }
+.titleContent { min-width: 0; }
+.titleLine { display:flex; align-items:center; gap:10px; min-width:0; }
+.titleLine h1 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.titleLine .status { flex:0 0 auto; border:1px solid currentColor; border-radius:999px; }
+.status, .statusSelect, .reminderChip, .kindChip { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
 .profileGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -728,3 +733,8 @@
 .iconField input::placeholder { color:$zTextMuted; }
 @media (max-width: 720px) { .reminderComposer { grid-template-columns:1fr; }.statusSelect { width:100% !important; }.companyField { grid-column:auto; } }
 @media (max-width: 720px) { .statusField, .newLeadForm label:nth-of-type(3), .newLeadForm label:nth-of-type(4) { grid-column:auto; } }
+@media (max-width: 720px) {
+  .newLeadForm { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .companyField, .statusField, .newLeadForm label:nth-of-type(3), .newLeadForm label:nth-of-type(4) { grid-column: auto; }
+  .newLeadForm .fullField, .newLeadForm .formActions { grid-column: 1 / -1; }
+}

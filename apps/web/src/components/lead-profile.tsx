@@ -135,7 +135,7 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
   const visibleActivities = showAllActivity ? lead.activities : lead.activities.slice(0, 6);
   return <main className={styles.page}>
     <header className={styles.profileHeader}>
-      <div><Link className={styles.back} href="/leads"><ArrowLeft size={15} /> Lead directory</Link><div className={styles.profileTitle}><span className={styles.largeAvatar}>{lead.company.slice(0, 1)}</span><div><em className={styles.status} data-status={lead.status}>{lead.status}</em><h1>{lead.company}</h1></div></div></div>
+      <div><Link className={styles.back} href="/leads"><ArrowLeft size={15} /> Lead directory</Link><div className={styles.profileTitle}><span className={styles.largeAvatar}>{lead.company.slice(0, 1)}</span><div className={styles.titleContent}><div className={styles.titleLine}><h1>{lead.company}</h1><em className={styles.status} data-status={lead.status}>{lead.status}</em></div></div></div></div>
       <div className={styles.profileActions}><button className={styles.secondaryButton} onClick={() => setPanel(panel === "interaction" ? null : "interaction")}><MessageSquare size={15} /> Log interaction</button><button className={styles.secondaryButton} onClick={() => setPanel(panel === "reminder" ? null : "reminder")}><Bell size={15} /> Add reminder</button><button className={styles.primaryButton} onClick={() => setPanel(panel === "edit" ? null : "edit")}><Pencil size={15} /> Edit lead</button><button className={styles.deleteButton} title="Delete lead" onClick={deleteLead}><Trash2 size={15} /></button></div>
     </header>
     {error && <p className={styles.formError}>{error}</p>}

@@ -7,3 +7,4 @@
 @media(max-width:900px) { .page { padding:24px 16px 44px; }.header { align-items:start; flex-direction:column; padding:22px; }.layout { grid-template-columns:1fr; }.profileCard,.side { width:100%; min-width:0; }.side { grid-template-columns:1fr; }.security { grid-column:auto; }.profileCard { padding:20px; } }
 .inputIcon { min-width:0; }
 .inputIcon input { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.layout { max-width:1050px; margin:0 auto; }

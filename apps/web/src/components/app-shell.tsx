@@ -11,7 +11,7 @@ import styles from "./app-shell.module.scss";
 const mainLinks = [
   { href: "/", label: "Pipeline", icon: LayoutDashboard, match: (path: string) => path === "/" },
   { href: "/calendar", label: "Follow-up calendar", icon: CalendarDays, match: (path: string) => path === "/calendar" },
-  { href: "/leads", label: "Lead directory", icon: UsersRound, match: (path: string) => path.startsWith("/leads") },
+  { href: "/leads", label: "Leads", icon: UsersRound, match: (path: string) => path.startsWith("/leads") },
 ];
 const quickLinks = [
   { href: "/leads?status=meeting", label: "Meetings", icon: Bell },
