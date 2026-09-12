@@ -285,34 +285,18 @@ export default function CrmDashboard() {
         </div>
       )}
       <div className={styles.dashboardTop}>
-      <section className={styles.overview}>
-        <div>
-          <span><ActivityIcon size={14} /> Open pipeline</span>
-          <strong>
-            {leads.filter((lead) => !outcomes.includes(lead.status)).length}
-          </strong>
-        </div>
-        <div>
-          <span><Bell size={14} /> Follow-ups today</span>
-          <strong>{dueToday.length}</strong>
-        </div>
-        <div className={overdue.length ? styles.danger : ""}>
-          <span><AlarmClock size={14} /> Overdue</span>
-          <strong>{overdue.length}</strong>
-        </div>
-        <div>
-          <span><Trophy size={14} /> Closed</span>
-          <strong>
-            {leads.filter((lead) => outcomes.includes(lead.status)).length}
-          </strong>
-        </div>
+      <section className={styles.metricCard}>
+        <span><ActivityIcon size={14} /> Open pipeline</span>
+        <strong>{leads.filter((lead) => !outcomes.includes(lead.status)).length}</strong>
       </section>
-
-      <section className={styles.snapshotCard}>
-        <span><ActivityIcon size={14} /> Pipeline snapshot</span>
-        <strong>{leads.length}</strong>
-        <small>Total lead records</small>
-        <div><span>{leads.filter((lead) => !outcomes.includes(lead.status)).length} open</span><span>{dueToday.length} due today</span></div>
+      <section className={styles.metricCard}>
+        <span><Bell size={14} /> Follow-ups today</span>
+        <strong>{dueToday.length}</strong>
+      </section>
+      <section className={`${styles.metricCard} ${overdue.length ? styles.danger : ""}`}>
+        <span><AlarmClock size={14} /> Pipeline health</span>
+        <strong>{overdue.length}</strong>
+        <small>{overdue.length ? "overdue" : "no overdue"} · {leads.filter((lead) => outcomes.includes(lead.status)).length} closed</small>
       </section>
 
       <section className={styles.reminderStrip}>
