@@ -13,8 +13,8 @@ html, body { min-height: 100%; }
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 85% -10%, rgba($zViolet, .13), transparent 28rem),
-    radial-gradient(circle at 10% 100%, rgba($zCyan, .04), transparent 24rem),
+    radial-gradient(ellipse at 85% -10%, rgba($zViolet, .2), transparent 42rem),
+    radial-gradient(ellipse at 10% 100%, rgba($zCyan, .055), transparent 32rem),
     $zBg0;
   color: $zText;
   font-family: var(--font-sans);
@@ -67,3 +67,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 button:disabled, select:disabled { opacity: .6; }
 svg { flex-shrink: 0; }
+
+/* Quiet, layered application chrome; no decorative controls or synthetic status. */
+@media (hover: hover) {
+  button:not(:disabled):hover { border-color: $zLineStrong; }
+}
+button:active:not(:disabled) { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) {
+  button:active:not(:disabled) { transform: none; }
+}
