@@ -489,9 +489,9 @@
 .activityRow strong { color: $zTextSoft; font-size: 11px; line-height: 1.4; }
 .activityRow small { color: $zTextMuted; font-size: 10px; }
 .noActivity { margin: 0; color: $zTextMuted; font-size: 11px; }
-.dashboardTop { grid-template-columns: minmax(0,.5fr) minmax(0,.5fr) minmax(0,.5fr) minmax(300px,1fr); }
+.dashboardTop { grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.65fr); gap:8px; }
 .dashboardTop .reminderStrip { grid-column: auto; }
-.metricCard { display:grid; align-content:center; gap:7px; min-width:0; padding:18px 20px; border:1px solid $zLine; border-radius:12px; background:linear-gradient(145deg,rgba($zBg1,.96),rgba($zBg2,.8)); }
+.metricCard { display:grid; align-content:center; gap:7px; width:100%; min-width:0; padding:18px 14px; border:1px solid $zLine; border-radius:12px; background:linear-gradient(145deg,rgba($zBg1,.96),rgba($zBg2,.8)); }
 .metricCard > span { display:flex; align-items:center; gap:6px; color:$zLavender; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
 .metricCard > strong { color:$zText; font:500 28px var(--font-mono); }
 .metricCard > small { color:$zTextMuted; font-size:10px; }

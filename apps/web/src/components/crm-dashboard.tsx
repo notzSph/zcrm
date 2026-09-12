@@ -18,6 +18,7 @@ import {
   Plus,
   Trash2,
   Trophy,
+  Users,
   UserRoundPlus,
   X,
 } from "lucide-react";
@@ -297,6 +298,11 @@ export default function CrmDashboard() {
         <span><AlarmClock size={14} /> Pipeline health</span>
         <strong>{overdue.length}</strong>
         <small>{overdue.length ? "overdue" : "no overdue"} · {leads.filter((lead) => outcomes.includes(lead.status)).length} closed</small>
+      </section>
+      <section className={styles.metricCard}>
+        <span><Users size={14} /> Total leads</span>
+        <strong>{leads.length}</strong>
+        <small>active workspace</small>
       </section>
 
       <section className={styles.reminderStrip}>
