@@ -2,7 +2,7 @@
 
 .page {
   min-height: 100vh;
-  max-width: 1180px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: 32px clamp(18px, 4vw, 54px) 54px;
 }
@@ -227,7 +227,7 @@
 }
 .profileGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 .infoCard,
@@ -250,6 +250,14 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+.infoCard:nth-child(1) h2 svg { color: $zCyan; }
+.infoCard:nth-child(2) h2 svg { color: $zOrange; }
+.infoCard:nth-child(3) h2 svg { color: $zLavender; }
+.infoCard:nth-child(4) h2 svg { color: $zGreen; }
+.contactLine { display:flex; align-items:center; gap:10px; min-width:0; }
+.contactLine p { min-width:0; margin:0; }
+.contactLine p:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.contactLine .muted { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .infoCard p {
   margin: 0 0 8px;
   color: $zTextSoft;
@@ -348,9 +356,9 @@
 }
 .newLeadForm {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  padding: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px;
 }
 .newLeadForm label {
   display: grid;
@@ -364,8 +372,8 @@
 .newLeadForm select,
 .newLeadForm textarea {
   width: 100%;
-  min-height: 39px;
-  padding: 9px 10px;
+  min-height: 35px;
+  padding: 7px 9px;
   color: $zText;
   border: 1px solid $zLine;
   border-radius: 7px;
@@ -387,6 +395,26 @@
 .fullField {
   grid-column: 1 / -1;
 }
+.companyField,
+.statusField,
+.newLeadForm label:nth-of-type(3),
+.newLeadForm label:nth-of-type(4) {
+  grid-column: span 2;
+}
+.statusSelect {
+  width: fit-content !important;
+  min-width: 116px;
+  border-radius: 999px !important;
+  color: $zLavender !important;
+  border-color: rgba($zLavender, .35) !important;
+  background: rgba($zViolet, .13) !important;
+  font-size: 10px !important;
+  font-weight: 700;
+  text-transform: uppercase !important;
+  letter-spacing: .04em !important;
+}
+.fieldHint { color: $zTextMuted; font-size: 9px; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.newLeadForm textarea { min-height: 66px; }
 .formActions {
   display: flex;
   justify-content: flex-end;
@@ -474,6 +502,8 @@
   background: rgba($zPink, 0.14);
 }
 .actionPanel {
+  width: 100%;
+  max-width: none;
   margin: -10px 0 14px;
   border: 1px solid $zLineStrong;
   border-radius: 11px;
@@ -512,8 +542,8 @@
 .quickReminderForm input,
 .quickReminderForm select {
   width: 100%;
-  min-height: 37px;
-  padding: 8px 9px;
+  min-height: 34px;
+  padding: 6px 8px;
   color: $zText;
   border: 1px solid $zLine;
   border-radius: 6px;
@@ -697,3 +727,4 @@
 .iconField input,.iconField select { min-width:0; min-height:35px; height:35px; flex:1; padding:0; border:0; outline:0; background:transparent; }
 .iconField input::placeholder { color:$zTextMuted; }
 @media (max-width: 720px) { .reminderComposer { grid-template-columns:1fr; }.statusSelect { width:100% !important; }.companyField { grid-column:auto; } }
+@media (max-width: 720px) { .statusField, .newLeadForm label:nth-of-type(3), .newLeadForm label:nth-of-type(4) { grid-column:auto; } }
