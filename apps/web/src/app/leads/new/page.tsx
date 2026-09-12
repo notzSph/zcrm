@@ -17,7 +17,7 @@ export default function NewLeadPage() {
     event.preventDefault();
     setSaving(true); setError("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: form.get("company"), contact_name: form.get("contact_name") || null, contact_email: form.get("contact_email") || null, contact_phone: form.get("contact_phone") || null, linkedin_url: form.get("linkedin_url") || null, source: form.get("source") || null, estimated_value: form.get("estimated_value") ? Number(form.get("estimated_value")) : null, status: form.get("status"), next_action: form.get("next_action") || null }) });
+    const response = await fetch("/api/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: form.get("company"), contact_name: form.get("contact_name") || null, contact_email: form.get("contact_email") || null, contact_phone: form.get("contact_phone") || null, linkedin_url: form.get("linkedin_url") || null, source: form.get("source") || null, estimated_value: form.get("estimated_value") ? Number(form.get("estimated_value")) : null, status: form.get("status"), description: form.get("description") || null, next_action: form.get("next_action") || null }) });
     setSaving(false);
     if (!response.ok) { setError("Could not create the lead. Check the fields and try again."); return; }
     const lead = await response.json();

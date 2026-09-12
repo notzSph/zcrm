@@ -76,6 +76,7 @@ export type Lead = {
   estimated_value: number | null;
   external_ref: string | null;
   status: LeadStatus;
+  description: string | null;
   next_action: string | null;
   created_at: string;
   updated_at: string;

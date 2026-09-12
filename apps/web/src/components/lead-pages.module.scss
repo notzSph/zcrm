@@ -274,6 +274,14 @@
   align-items: center;
   gap: 6px;
 }
+.descriptionCard {
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+.descriptionCard p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .timeline {
   margin-top: 14px;
   overflow: hidden;

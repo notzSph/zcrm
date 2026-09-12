@@ -174,6 +174,7 @@ export default function CrmDashboard() {
         company: form.get("company"),
         contact_name: form.get("contact_name") || null,
         contact_email: form.get("contact_email") || null,
+        description: form.get("description") || null,
         next_action: form.get("next_action") || null,
       }),
     });
@@ -440,6 +441,10 @@ export default function CrmDashboard() {
               <input type="email" name="contact_email" />
             </label>
             <label>
+              Description
+              <textarea name="description" placeholder="Useful context for this lead" />
+            </label>
+            <label>
               Next action
               <textarea
                 name="next_action"
@@ -517,6 +522,7 @@ function LeadDrawer({
   const [company, setCompany] = useState(lead.company);
   const [contactName, setContactName] = useState(lead.contact_name || "");
   const [contactEmail, setContactEmail] = useState(lead.contact_email || "");
+  const [description, setDescription] = useState(lead.description || "");
   const [nextAction, setNextAction] = useState(lead.next_action || "");
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
@@ -524,6 +530,7 @@ function LeadDrawer({
     setCompany(lead.company);
     setContactName(lead.contact_name || "");
     setContactEmail(lead.contact_email || "");
+    setDescription(lead.description || "");
     setNextAction(lead.next_action || "");
     setStatus(lead.status);
   }, [lead]);
@@ -533,6 +540,7 @@ function LeadDrawer({
       company,
       contact_name: contactName || null,
       contact_email: contactEmail || null,
+      description: description || null,
       next_action: nextAction || null,
       status,
     });
@@ -555,6 +563,13 @@ function LeadDrawer({
           <button onClick={onClose}>
             <X size={19} />
           </button>
+        </div>
+        <Link className={styles.drawerPageLink} href={`/leads/${lead.id}`}>
+          <FileText size={14} /> Open lead page
+        </Link>
+        <div className={styles.drawerDescription}>
+          <span>Description</span>
+          <p>{lead.description || "No description added."}</p>
         </div>
         <form className={styles.form} onSubmit={save}>
           <label>
@@ -591,6 +606,14 @@ function LeadDrawer({
               type="email"
               value={contactEmail}
               onChange={(event) => setContactEmail(event.target.value)}
+            />
+          </label>
+          <label>
+            Description
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Useful context for this lead"
             />
           </label>
           <label>

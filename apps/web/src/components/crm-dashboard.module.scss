@@ -177,7 +177,7 @@
 }
 .board {
   display: grid;
-  grid-template-columns: repeat(5, minmax(210px, 1fr));
+  grid-template-columns: repeat(6, minmax(210px, 1fr));
   gap: 13px;
   align-items: start;
   overflow-x: auto;
@@ -241,6 +241,7 @@
 .card {
   display: grid;
   width: 100%;
+  min-width: 0;
   gap: 7px;
   padding: 14px;
   color: $zTextSoft;
@@ -264,18 +265,24 @@
   gap: 8px;
 }
 .card strong {
+  min-width: 0;
   color: $zText;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 .card > span {
+  min-width: 0;
   color: $zTextMuted;
   font-size: 11px;
+  overflow-wrap: anywhere;
 }
 .card p {
+  min-width: 0;
   margin: 2px 0 0;
   color: $zTextSoft;
   font-size: 11px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 .card small {
   display: flex;
@@ -413,6 +420,48 @@
   text-transform: uppercase;
   letter-spacing: 0.09em;
 }
+.drawerPageLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  margin: -6px 0 18px;
+  padding: 7px 9px;
+  color: $zLavender;
+  border: 1px solid $zLine;
+  border-radius: 7px;
+  background: $zBg2;
+  font: 500 10px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.drawerPageLink:hover {
+  color: $zText;
+  border-color: $zViolet;
+  background: $zBg3;
+}
+.drawerDescription {
+  margin: -2px 0 20px;
+  padding: 12px;
+  border: 1px solid $zLine;
+  border-radius: 8px;
+  background: rgba($zBg2, 0.45);
+}
+.drawerDescription span {
+  display: block;
+  margin-bottom: 6px;
+  color: $zTextMuted;
+  font: 500 10px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.drawerDescription p {
+  color: $zTextSoft;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .drawerSection {
   margin-top: 28px;
   padding-top: 22px;
@@ -507,7 +556,7 @@
 .reminderPagination { display:flex; align-items:center; justify-content:flex-end; gap:8px; padding:8px 12px; color:$zTextMuted; font:500 10px var(--font-mono); border-top:1px solid $zLine; }
 .reminderPagination button { width:24px; height:24px; color:$zTextSoft; border:1px solid $zLine; border-radius:5px; background:$zBg2; }
 .reminderPagination button:disabled { opacity:.35; }
-.board { grid-template-columns: repeat(5, minmax(210px, 1fr)); overflow-x:auto; }
+.board { grid-template-columns: repeat(6, minmax(210px, 1fr)); overflow-x:auto; }
 .column { min-width:210px; }
 @media (max-width: 1020px) { .dashboardTop { grid-template-columns:1fr; } }
 @media (max-width: 700px) {

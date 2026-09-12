@@ -148,6 +148,7 @@ class LeadCreate(BaseModel):
     estimated_value: float | None = None
     external_ref: str | None = Field(default=None, max_length=255)
     status: LeadStatus = LeadStatus.connected
+    description: str | None = None
     next_action: str | None = None
 
 
@@ -162,6 +163,7 @@ class LeadUpdate(BaseModel):
     estimated_value: float | None = None
     external_ref: str | None = Field(default=None, max_length=255)
     status: LeadStatus | None = None
+    description: str | None = None
     next_action: str | None = None
 
 
@@ -178,6 +180,7 @@ class LeadOut(BaseModel):
     estimated_value: float | None
     external_ref: str | None
     status: LeadStatus
+    description: str | None
     next_action: str | None
     created_at: datetime
     updated_at: datetime
