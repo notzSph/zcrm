@@ -10,18 +10,25 @@ import {
   CalendarClock,
   Check,
   ChevronDown,
+  CircleX,
   FileText,
   History,
   Mail,
   MessageSquare,
   Pencil,
   Plus,
+  Radio,
+  Send,
+  Sprout,
+  Target,
   Trash2,
+  Trophy,
   UserRound,
   X,
 } from "lucide-react";
-import { ActivityType, type Lead, type Reminder } from "@/lib/types";
-import { leadStatusOptions, reminderKindOptions } from "@/lib/options";
+import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/select-menu";
+import { ActivityType, LeadStatus, type Lead, type Reminder } from "@/lib/types";
+import { reminderKindOptions } from "@/lib/options";
 import styles from "@/lib/components/lead-pages/lead-pages.module.scss";
 
 const fullDate = (value: string) =>
@@ -35,6 +42,17 @@ const localDateTime = (value?: string) => {
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
   return date.toISOString().slice(0, 16);
 };
+const statusMenuOptions: SelectMenuOption<LeadStatus>[] = [
+  { value: LeadStatus.Target, label: "Target", icon: Target, tone: "violet" },
+  { value: LeadStatus.Connected, label: "Connected", icon: Radio, tone: "violet" },
+  { value: LeadStatus.Contacted, label: "Contacted", icon: Send, tone: "violet" },
+  { value: LeadStatus.Meeting, label: "Meeting", icon: CalendarClock, tone: "yellow" },
+  { value: LeadStatus.Proposal, label: "Proposal", icon: FileText, tone: "violet" },
+  { value: LeadStatus.Won, label: "Won", icon: Trophy, tone: "green" },
+  { value: LeadStatus.Lost, label: "Lost", icon: CircleX, tone: "red" },
+  { value: LeadStatus.Nurture, label: "Nurture", icon: Sprout, tone: "green" },
+];
+
 function activityText(type: ActivityType, payload: Record<string, unknown>) {
   if (type === ActivityType.LeadCreated) return "Lead created";
   if (type === ActivityType.StatusChanged)
@@ -370,6 +388,7 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
           </button>
           <button
             className={styles.deleteButton}
+            aria-label="Delete lead"
             title="Delete lead"
             onClick={deleteLead}
           >
@@ -385,8 +404,8 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
               <span>Edit lead</span>
               <p>Keep the record clear and actionable.</p>
             </div>
-            <button onClick={() => setPanel(null)}>
-              <X size={17} />
+            <button aria-label="Close edit panel" title="Close" onClick={() => setPanel(null)}>
+              <X size={17} aria-hidden="true" />
             </button>
           </div>
           <form className={styles.newLeadForm} onSubmit={saveLead}>
@@ -396,17 +415,13 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
             </label>
             <label className={styles.statusField}>
               Status
-              <select
-                className={styles.statusSelect}
+              <SelectMenu
+                className={styles.statusMenu}
+                label="Lead status"
                 name="status"
+                options={statusMenuOptions}
                 defaultValue={lead.status}
-              >
-                {leadStatusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label>
               Contact name
@@ -496,8 +511,8 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
               <span>Add follow-up</span>
               <p>Set what, when, and why.</p>
             </div>
-            <button onClick={() => setPanel(null)}>
-              <X size={17} />
+            <button aria-label="Close reminder panel" title="Close" onClick={() => setPanel(null)}>
+              <X size={17} aria-hidden="true" />
             </button>
           </div>
           <form
@@ -545,8 +560,8 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
               <span>Log interaction</span>
               <p>Capture the real conversation.</p>
             </div>
-            <button onClick={() => setPanel(null)}>
-              <X size={17} />
+            <button aria-label="Close interaction panel" title="Close" onClick={() => setPanel(null)}>
+              <X size={17} aria-hidden="true" />
             </button>
           </div>
           <form className={styles.quickReminderForm} onSubmit={addInteraction}>
@@ -644,6 +659,7 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
           <button
             className={styles.iconAction}
             onClick={() => setPanel("reminder")}
+            aria-label="Add reminder"
             title="Add reminder"
           >
             <Plus size={17} />

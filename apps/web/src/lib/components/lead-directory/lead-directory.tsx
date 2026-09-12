@@ -6,24 +6,35 @@ import {
   ArrowLeft,
   Bell,
   Building2,
+  CalendarDays,
   ChevronRight,
+  CircleX,
+  FileText,
   Filter,
+  Radio,
+  Search,
+  Send,
+  Sprout,
+  Target,
+  Trophy,
   UsersRound,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/select-menu";
 import { LeadStatus, type Lead } from "@/lib/types";
 import styles from "@/lib/components/lead-pages/lead-pages.module.scss";
 
-const filters: { value: "all" | LeadStatus; label: string }[] = [
-  { value: "all", label: "All leads" },
-  { value: LeadStatus.Target, label: "Target" },
-  { value: LeadStatus.Connected, label: "Connected" },
-  { value: LeadStatus.Contacted, label: "Contacted" },
-  { value: LeadStatus.Meeting, label: "Meeting" },
-  { value: LeadStatus.Proposal, label: "Proposal" },
-  { value: LeadStatus.Won, label: "Won" },
-  { value: LeadStatus.Lost, label: "Lost" },
-  { value: LeadStatus.Nurture, label: "Nurture" },
+type LeadFilter = "all" | LeadStatus;
+const filters: SelectMenuOption<LeadFilter>[] = [
+  { value: "all", label: "All leads", icon: Filter, tone: "violet" },
+  { value: LeadStatus.Target, label: "Target", icon: Target, tone: "violet" },
+  { value: LeadStatus.Connected, label: "Connected", icon: Radio, tone: "violet" },
+  { value: LeadStatus.Contacted, label: "Contacted", icon: Send, tone: "violet" },
+  { value: LeadStatus.Meeting, label: "Meeting", icon: CalendarDays, tone: "yellow" },
+  { value: LeadStatus.Proposal, label: "Proposal", icon: FileText, tone: "violet" },
+  { value: LeadStatus.Won, label: "Won", icon: Trophy, tone: "green" },
+  { value: LeadStatus.Lost, label: "Lost", icon: CircleX, tone: "red" },
+  { value: LeadStatus.Nurture, label: "Nurture", icon: Sprout, tone: "green" },
 ];
 
 function upcoming(lead: Lead) {
@@ -41,8 +52,9 @@ export default function LeadDirectory() {
   const router = useRouter();
   const pathname = usePathname();
   const active =
-    (searchParams.get("status") as "all" | LeadStatus | null) || "all";
+    (searchParams.get("status") as LeadFilter | null) || "all";
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -60,13 +72,27 @@ export default function LeadDirectory() {
       .catch(() => setError("Could not load the lead directory. Try again."))
       .finally(() => setLoading(false));
   }, []);
-  const visible = useMemo(
-    () =>
-      active === "all" ? leads : leads.filter((lead) => lead.status === active),
-    [active, leads],
-  );
+  const visible = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return leads.filter((lead) => {
+      const matchesStatus = active === "all" || lead.status === active;
+      const matchesQuery = !normalizedQuery || [
+        lead.company,
+        lead.contact_name,
+        lead.contact_email,
+        lead.source,
+      ].some((value) => value?.toLowerCase().includes(normalizedQuery));
+      return matchesStatus && matchesQuery;
+    });
+  }, [active, leads, query]);
+  const filterOptions = filters.map((filter) => ({
+    ...filter,
+    count: filter.value === "all"
+      ? leads.length
+      : leads.filter((lead) => lead.status === filter.value).length,
+  }));
 
-  function changeFilter(value: "all" | LeadStatus) {
+  function changeFilter(value: LeadFilter) {
     router.replace(value === "all" ? pathname : `${pathname}?status=${value}`);
   }
 
@@ -88,22 +114,27 @@ export default function LeadDirectory() {
           <span>{leads.length}</span> leads
         </div>
       </header>
-      <section className={styles.filters} aria-label="Filter leads by status">
-        <Filter size={15} />
-        {filters.map((filter) => (
-          <button
-            key={filter.value}
-            className={active === filter.value ? styles.activeFilter : ""}
-            onClick={() => changeFilter(filter.value)}
-          >
-            {filter.label}
-            <span>
-              {filter.value === "all"
-                ? leads.length
-                : leads.filter((lead) => lead.status === filter.value).length}
-            </span>
-          </button>
-        ))}
+      <section className={styles.directoryTools} aria-label="Lead directory controls">
+        <label className={styles.searchField}>
+          <span className={styles.srOnly}>Search leads</span>
+          <Search size={16} aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search company, contact, email, or source"
+          />
+        </label>
+        <SelectMenu
+          compact
+          label="Filter leads by status"
+          options={filterOptions}
+          value={active}
+          onChange={changeFilter}
+        />
+        <span className={styles.resultCount} aria-live="polite">
+          {visible.length} shown
+        </span>
       </section>
       {error && (
         <div className={styles.error}>
