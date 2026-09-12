@@ -1,10 +1,12 @@
 from datetime import UTC, datetime, timedelta
+import os
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.domain_models import BusinessMembership, User, UserSession
+from app.email import send_password_reset_email
 from app.domain_schemas import (
     ForgotPasswordIn, LoginIn, LoginOut, ProfileUpdate, RegisterIn,
     ResetPasswordIn, UserOut,
@@ -72,14 +74,17 @@ def update_me(payload: ProfileUpdate, request: Request, db: Session = Depends(ge
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(get_db)) -> dict[str, str]:
+def forgot_password(payload: ForgotPasswordIn, background_tasks: BackgroundTasks, db: Session = Depends(get_db)) -> dict[str, str]:
     user = db.query(User).filter(User.email == payload.email.lower()).first()
     if not user:
         return {"message": "If the account exists, reset instructions will be sent."}
     user.reset_token = secrets.token_urlsafe(32)
     user.reset_token_expires_at = datetime.now(UTC) + timedelta(hours=1)
     db.commit()
-    return {"message": "If the account exists, reset instructions will be sent.", "token": user.reset_token, "user_id": str(user.id)}
+    app_url = os.getenv("PUBLIC_APP_URL", "http://localhost:3200").rstrip("/")
+    reset_url = f"{app_url}/reset-password?user_id={user.id}&token={user.reset_token}"
+    background_tasks.add_task(send_password_reset_email, user.email, reset_url)
+    return {"message": "If the account exists, reset instructions will be sent."}
 
 
 @router.post("/reset-password")

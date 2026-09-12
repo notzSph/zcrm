@@ -83,5 +83,30 @@ Docker applies migrations before starting the API. For an existing database crea
 the pre-Alembic build, back it up and stamp or reconcile its schema before deploying;
 the initial revision is intended for a fresh database.
 
-The current deployable basic CRM still needs production email delivery for password
-resets, automated tests against PostgreSQL, and an explicit backup/restore process.
+The current deployable basic CRM includes SMTP password-reset delivery, a PostgreSQL
+integration smoke test, and explicit backup/restore scripts.
+
+### Operations
+
+Create a database backup from the Docker host:
+
+```bash
+./scripts/backup-db.sh /var/backups/zcrm
+```
+
+Restore only after stopping application traffic and confirming the target backup:
+
+```bash
+CONFIRM_RESTORE=yes ./scripts/restore-db.sh /var/backups/zcrm/zcrm-YYYYMMDDTHHMMSSZ.dump
+```
+
+Run the PostgreSQL smoke test against an already migrated integration database:
+
+```bash
+cd apps/api
+RUN_POSTGRES_TESTS=1 DATABASE_URL='postgresql+psycopg://...' pytest -q
+```
+
+Password reset delivery uses SMTP. Set `PUBLIC_APP_URL`, `SMTP_HOST`,
+`SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, and `SMTP_STARTTLS`
+in `infra/.env`. Reset responses never expose tokens; links are sent by email.
