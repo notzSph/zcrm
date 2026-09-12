@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BarChart3, Bell, Building2, CalendarDays, FileText, LayoutDashboard, LogOut, Plus, UsersRound } from "lucide-react";
+import { BarChart3, Bell, Building2, CalendarDays, FileText, LayoutDashboard, LogOut, Plus, UserCircle, UsersRound } from "lucide-react";
 import styles from "./app-shell.module.scss";
 
 const mainLinks = [
@@ -36,6 +36,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
         {mainLinks.map((link) => { const Icon = link.icon; return <Link className={link.match(pathname) ? styles.active : ""} href={link.href} key={link.href}><Icon size={16} />{link.label}</Link>; })}
       </nav>
       <div className={styles.divider} />
+      <nav className={styles.nav} aria-label="Account navigation">
+        <Link className={pathname === "/profile" ? styles.active : ""} href="/profile"><UserCircle size={15} />Profile</Link>
+      </nav>
       <p className={styles.navLabel}>Quick views</p>
       <nav className={styles.nav} aria-label="Quick views">
         {quickLinks.map((link) => { const Icon = link.icon; const status = link.href.split("=")[1]; return <Link className={pathname === "/leads" && searchParams.get("status") === status ? styles.active : ""} href={link.href} key={link.href}><Icon size={15} />{link.label}</Link>; })}

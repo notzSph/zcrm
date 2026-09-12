@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname === "/login" || pathname === "/register" || pathname.startsWith("/api") || pathname.startsWith("/_next") || pathname === "/favicon.ico") {
+  if (pathname === "/login" || pathname === "/register" || pathname === "/reset-password" || pathname.startsWith("/api") || pathname.startsWith("/_next") || pathname === "/favicon.ico") {
     return NextResponse.next();
   }
   const token = request.cookies.get("zcrm_session")?.value;

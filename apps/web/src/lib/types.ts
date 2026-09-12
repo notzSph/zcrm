@@ -43,15 +43,43 @@ export type Activity = {
   created_at: string;
 };
 
+export type Interaction = {
+  id: string;
+  lead_id: string;
+  interaction_type: "reply" | "message" | "call" | "meeting" | "proposal_sent" | "note" | "other";
+  body: string;
+  occurred_at: string;
+  external_ref: string | null;
+  created_at: string;
+};
+
+export type LeadAttachment = {
+  id: string;
+  lead_id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  kind: string;
+  created_at: string;
+};
+
 export type Lead = {
   id: string;
   company: string;
   contact_name: string | null;
   contact_email: string | null;
+  contact_phone: string | null;
+  linkedin_url: string | null;
+  source: string | null;
+  tags: string[];
+  estimated_value: number | null;
+  external_ref: string | null;
   status: LeadStatus;
   next_action: string | null;
   created_at: string;
   updated_at: string;
   reminders: Reminder[];
   activities: Activity[];
+  interactions: Interaction[];
+  attachments: LeadAttachment[];
 };
