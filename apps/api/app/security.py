@@ -46,6 +46,11 @@ def create_session(db: Session, user: User) -> str:
     db.commit()
     return raw_token
 
+def invalidate_session(db: Session, raw_token: str) -> None:
+    session = db.query(UserSession).filter(UserSession.token_hash == hash_token(raw_token)).first()
+    if session:
+        db.delete(session); db.commit()
+
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
@@ -92,3 +97,13 @@ def require_context(request: Request, x_api_key: str | None = Header(default=Non
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
     return RequestContext(business=business, user=user)
+
+def require_agent_context(x_api_key: str | None = Header(default=None), x_business_id: str | None = Header(default=None), db: Session = Depends(get_db)) -> RequestContext:
+    api_key = os.getenv("JAYZOO_API_KEY", "")
+    if not api_key or not x_api_key or not hmac.compare_digest(x_api_key, api_key):
+        raise HTTPException(status_code=401, detail="Valid X-API-Key required")
+    try: business_id = uuid.UUID(x_business_id or "")
+    except ValueError as exc: raise HTTPException(status_code=400, detail="X-Business-ID is required") from exc
+    business = db.get(Business, business_id)
+    if not business: raise HTTPException(status_code=404, detail="Business not found")
+    return RequestContext(business=business, user=None, is_agent=True)
