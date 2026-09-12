@@ -21,8 +21,9 @@ export default function LeadDirectory() {
   const active = (searchParams.get("status") as "all" | LeadStatus | null) || "all";
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => { fetch("/api/leads", { cache: "no-store" }).then((response) => response.ok ? response.json() : []).then(setLeads).finally(() => setLoading(false)); }, []);
+  useEffect(() => { fetch("/api/leads", { cache: "no-store" }).then(async (response) => { if (response.status === 401) { window.location.assign("/login"); return []; } if (!response.ok) throw new Error(); return response.json(); }).then(setLeads).catch(() => setError("Could not load the lead directory. Try again.")).finally(() => setLoading(false)); }, []);
   const visible = useMemo(() => active === "all" ? leads : leads.filter((lead) => lead.status === active), [active, leads]);
 
   function changeFilter(value: "all" | LeadStatus) {
@@ -35,6 +36,7 @@ export default function LeadDirectory() {
       <div className={styles.directoryTotal}><UsersRound size={17} /><span>{leads.length}</span> leads</div>
     </header>
     <section className={styles.filters} aria-label="Filter leads by status"><Filter size={15} />{filters.map((filter) => <button key={filter.value} className={active === filter.value ? styles.activeFilter : ""} onClick={() => changeFilter(filter.value)}>{filter.label}<span>{filter.value === "all" ? leads.length : leads.filter((lead) => lead.status === filter.value).length}</span></button>)}</section>
+    {error && <div className={styles.error}>{error}<button onClick={() => window.location.reload()}>Retry</button></div>}
     <section className={styles.list}>
       <div className={styles.listHead}><span>Account</span><span>Stage</span><span>Next follow-up</span><span /></div>
       {loading && <div className={styles.loading}>Loading directory…</div>}
