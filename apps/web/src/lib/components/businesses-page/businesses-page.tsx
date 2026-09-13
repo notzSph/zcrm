@@ -114,7 +114,7 @@ export default function BusinessesPage() {
       <header className={styles.header}>
         <div>
           <span className={styles.eyebrow}>
-            <Building2 size={15} /> Workspace directory
+            <Building2 size={15}  aria-hidden="true" /> Workspace directory
           </span>
           <h1>Your businesses</h1>
           <p>
@@ -138,9 +138,6 @@ export default function BusinessesPage() {
               <span className={styles.kicker}>Connected workspaces</span>
               <h2>Pick a workspace</h2>
             </div>
-            <span className={styles.live}>
-              <i /> Live
-            </span>
           </div>
           <div className={styles.list}>
             {businesses.map((business) => (
@@ -153,7 +150,7 @@ export default function BusinessesPage() {
                     <img src={business.logo_url} alt="" />
                   ) : (
                     <span className={styles.logo}>
-                      <Building2 size={17} />
+                      <Building2 size={17}  aria-hidden="true" />
                     </span>
                   )}
                   <div>
@@ -161,20 +158,20 @@ export default function BusinessesPage() {
                     <small>{business.industry || "Business workspace"}</small>
                     {business.description && <p>{business.description}</p>}
                   </div>
-                  <ArrowRight size={17} />
+                  <ArrowRight size={17}  aria-hidden="true" />
                 </button>
                 <div className={styles.actions}>
                   <button
                     aria-label={`Edit ${business.name}`}
                     onClick={() => startEdit(business)}
                   >
-                    <Pencil size={14} />
+                    <Pencil size={14}  aria-hidden="true" />
                   </button>
                   <button
                     aria-label={`Delete ${business.name}`}
                     onClick={() => remove(business)}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={14}  aria-hidden="true" />
                   </button>
                 </div>
               </article>
@@ -190,7 +187,7 @@ export default function BusinessesPage() {
         <section className={styles.formCard}>
           <div className={styles.formTitle}>
             <span className={styles.eyebrow}>
-              {editing ? <Pencil size={14} /> : <Plus size={14} />}{" "}
+              {editing ? <Pencil size={14}  aria-hidden="true" /> : <Plus size={14}  aria-hidden="true" />}{" "}
               {editing ? "Workspace settings" : "New workspace"}
             </span>
             <h2>{editing ? "Edit business details" : "Create a business"}</h2>
@@ -221,7 +218,7 @@ export default function BusinessesPage() {
             <label>
               Website
               <div className={styles.inputIcon}>
-                <Globe2 size={14} />
+                <Globe2 size={14}  aria-hidden="true" />
                 <input
                   type="url"
                   value={form.website}
@@ -233,7 +230,7 @@ export default function BusinessesPage() {
             <label>
               Logo URL
               <div className={styles.inputIcon}>
-                <ImageIcon size={14} />
+                <ImageIcon size={14}  aria-hidden="true" />
                 <input
                   type="url"
                   value={form.logo_url}
@@ -261,7 +258,7 @@ export default function BusinessesPage() {
                     setForm(emptyForm);
                   }}
                 >
-                  <X size={14} /> Cancel
+                  <X size={14}  aria-hidden="true" /> Cancel
                 </button>
               )}
               <button className={styles.primary} disabled={saving}>
@@ -269,7 +266,7 @@ export default function BusinessesPage() {
                   "Saving…"
                 ) : (
                   <>
-                    <Check size={14} />{" "}
+                    <Check size={14}  aria-hidden="true" />{" "}
                     {editing ? "Save details" : "Create workspace"}
                   </>
                 )}
