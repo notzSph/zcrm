@@ -118,5 +118,5 @@ password is generated from Apple Account settings; do not use the normal Apple
 Account password. Creating or updating a reminder writes a timed event, and
 deleting a reminder removes its synced event.
 
-After restarting the stack, verify discovery with `GET /api/v1/calendar/caldav`
+After restarting the stack, verify discovery with `GET /api/calendar/caldav`
 while logged in. A successful response includes the discovered calendar URL.
