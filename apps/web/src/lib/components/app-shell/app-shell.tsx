@@ -5,49 +5,19 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BarChart3,
-  Bell,
-  Building2,
-  CalendarDays,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  Plus,
-  UserCircle,
-  UsersRound,
+  BarChart3, Bell, Building2, CalendarDays, ChevronDown, FileText,
+  LayoutDashboard, LogOut, Menu, Plus, UsersRound, X,
 } from "lucide-react";
 import type { Business } from "@/lib/types";
 import styles from "./app-shell.module.scss";
 
-type CurrentUser = {
-  display_name: string;
-  email: string;
-  profile_pic?: string | null;
-  businesses: Business[];
-  active_business_id?: string | null;
-};
-
+type CurrentUser = { display_name: string; email: string; profile_pic?: string | null; businesses: Business[]; active_business_id?: string | null };
 const publicRoutes = new Set(["/login", "/register", "/reset-password"]);
-
 const mainLinks = [
-  {
-    href: "/",
-    label: "Pipeline",
-    icon: LayoutDashboard,
-    match: (path: string) => path === "/",
-  },
-  {
-    href: "/calendar",
-    label: "Follow-up calendar",
-    icon: CalendarDays,
-    match: (path: string) => path === "/calendar",
-  },
-  {
-    href: "/leads",
-    label: "Leads",
-    icon: UsersRound,
-    match: (path: string) => path.startsWith("/leads"),
-  },
+  { href: "/", label: "Pipeline", index: "01", icon: LayoutDashboard, match: (path: string) => path === "/" },
+  { href: "/calendar", label: "Calendar", index: "02", icon: CalendarDays, match: (path: string) => path === "/calendar" },
+  { href: "/leads", label: "Leads", index: "03", icon: UsersRound, match: (path: string) => path.startsWith("/leads") },
+  { href: "/businesses", label: "Workspaces", index: "04", icon: Building2, match: (path: string) => path.startsWith("/businesses") },
 ];
 const quickLinks = [
   { href: "/leads?status=meeting", label: "Meetings", icon: Bell },
@@ -63,187 +33,62 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [activeBusinessId, setActiveBusinessId] = useState("");
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [workspaceError, setWorkspaceError] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    setMenuOpen(false);
     if (publicRoutes.has(pathname)) return;
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then(async (response) => {
-        if (response.status === 401) {
-          window.location.assign("/login");
-          return;
-        }
-        if (!response.ok) throw new Error("Profile unavailable");
-        const nextUser = (await response.json()) as CurrentUser;
-        setUser(nextUser);
-        setBusinesses(nextUser.businesses ?? []);
-        setActiveBusinessId(
-          nextUser.active_business_id ?? nextUser.businesses?.[0]?.id ?? "",
-        );
-        setWorkspaceError("");
-      })
-      .catch(() => setWorkspaceError("Workspace unavailable"));
+    fetch("/api/auth/me", { cache: "no-store" }).then(async (response) => {
+      if (response.status === 401) { window.location.assign("/login"); return; }
+      if (!response.ok) throw new Error("Profile unavailable");
+      const nextUser = (await response.json()) as CurrentUser;
+      setUser(nextUser); setBusinesses(nextUser.businesses ?? []);
+      setActiveBusinessId(nextUser.active_business_id ?? nextUser.businesses?.[0]?.id ?? "");
+      setWorkspaceError("");
+    }).catch(() => setWorkspaceError("Workspace unavailable"));
   }, [pathname]);
 
   async function switchBusiness(businessId: string) {
     if (!businessId || businessId === activeBusinessId) return;
-    const response = await fetch("/api/auth/active-business", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ business_id: businessId }),
-    });
-    if (!response.ok) {
-      setWorkspaceError("Could not switch workspace");
-      return;
-    }
-    setWorkspaceError("");
-    setActiveBusinessId(businessId);
-    router.replace("/");
-    router.refresh();
+    const response = await fetch("/api/auth/active-business", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ business_id: businessId }) });
+    if (!response.ok) { setWorkspaceError("Could not switch workspace"); return; }
+    setWorkspaceError(""); setActiveBusinessId(businessId); router.replace("/"); router.refresh();
   }
+  async function logout() { await fetch("/api/auth/logout", { method: "POST" }); window.location.assign("/login"); }
+  const activeBusiness = businesses.find((business) => business.id === activeBusinessId);
+  const initials = user?.display_name?.trim().split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "Z";
+  if (publicRoutes.has(pathname)) return <div id="main-content">{children}</div>;
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.assign("/login");
-  }
-
-  const activeBusiness = businesses.find(
-    (business) => business.id === activeBusinessId,
-  );
-  const initials =
-    user?.display_name
-      ?.trim()
-      .split(/\s+/)
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "Z";
-
-  if (publicRoutes.has(pathname))
-    return <div id="main-content">{children}</div>;
-
-  return (
-    <div className={styles.shell}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <Link className={styles.brand} href="/">
-            <span>z</span>CRM
-          </Link>
-          <span className={styles.liveDot}>
-            <i /> Live
-          </span>
-        </div>
-        <div className={styles.workspaceSwitcher}>
-          <label htmlFor="workspace-switcher">Workspace</label>
-          <div className={styles.workspaceSelect}>
-            {activeBusiness?.logo_url ? (
-              <img src={activeBusiness.logo_url} alt="" />
-            ) : (
-              <span>
-                {activeBusiness?.name?.slice(0, 1).toUpperCase() || "W"}
-              </span>
-            )}
-            <select
-              id="workspace-switcher"
-              value={activeBusinessId}
-              onChange={(event) => switchBusiness(event.target.value)}
-              disabled={!businesses.length}
-            >
-              {!businesses.length && (
-                <option value="">
-                  {workspaceError || "Loading workspaces…"}
-                </option>
-              )}
-              {businesses.map((business) => (
-                <option value={business.id} key={business.id}>
-                  {business.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Link className={styles.workspace} href="/businesses">
-            <Building2 size={12} /> Manage workspaces <span>↗</span>
-          </Link>
-        </div>
-        <Link className={styles.newLead} href="/leads/new">
-          <Plus size={16} /> New lead
+  const navigation = (mobile = false) => (
+    <nav className={mobile ? styles.mobileLinks : styles.nav} aria-label={mobile ? "Mobile navigation" : "Primary navigation"}>
+      {mainLinks.map((link) => { const Icon = link.icon; const active = link.match(pathname); return (
+        <Link aria-current={active ? "page" : undefined} className={active ? styles.active : ""} href={link.href} key={link.href}>
+          <span className={styles.linkIndex}>/{link.index}</span><Icon size={15} aria-hidden="true" />{link.label}
         </Link>
-        <p className={styles.navLabel}>Workspace</p>
-        <nav className={styles.nav} aria-label="Main navigation">
-          {mainLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <Link
-                aria-current={link.match(pathname) ? "page" : undefined}
-                className={link.match(pathname) ? styles.active : ""}
-                href={link.href}
-                key={link.href}
-              >
-                <Icon size={16} />
-                {link.label}
-                <span className={styles.chevron}>›</span>
-              </Link>
-            );
-          })}
-        </nav>
-        <div className={styles.divider} />
-        <p className={styles.navLabel}>Account</p>
-        <nav className={styles.nav} aria-label="Account navigation">
-          <Link
-            aria-current={pathname === "/profile" ? "page" : undefined}
-            className={pathname === "/profile" ? styles.active : ""}
-            href="/profile"
-          >
-            <UserCircle size={15} />
-            Profile<span className={styles.chevron}>›</span>
-          </Link>
-        </nav>
-        <p className={styles.navLabel}>Quick views</p>
-        <nav className={styles.nav} aria-label="Quick views">
-          {quickLinks.map((link) => {
-            const Icon = link.icon;
-            const status = link.href.split("=")[1];
-            return (
-              <Link
-                aria-current={
-                  pathname === "/leads" && searchParams.get("status") === status
-                    ? "page"
-                    : undefined
-                }
-                className={
-                  pathname === "/leads" && searchParams.get("status") === status
-                    ? styles.active
-                    : ""
-                }
-                href={link.href}
-                key={link.href}
-              >
-                <Icon size={15} />
-                {link.label}
-                <span className={styles.chevron}>›</span>
-              </Link>
-            );
-          })}
-        </nav>
-        <div className={styles.sidebarFooter}>
-          <Link className={styles.account} href="/profile">
-            {user?.profile_pic ? (
-              <img src={user.profile_pic} alt="" />
-            ) : (
-              <span>{initials}</span>
-            )}
-            <div>
-              <strong>{user?.display_name || "Loading account…"}</strong>
-              <small>{user?.email || "CRM operator"}</small>
-            </div>
-          </Link>
-          <button className={styles.logout} onClick={logout}>
-            <LogOut size={15} /> Sign out
-          </button>
+      ); })}
+    </nav>
+  );
+
+  return <div className={styles.shell}>
+    <header className={styles.header}>
+      <div className={styles.headerInner}>
+        <Link className={styles.brand} href="/" aria-label="zCRM pipeline"><span className={styles.brandMark}>z</span><span>CRM</span></Link>
+        {navigation()}
+        <div className={styles.headerActions}>
+          <Link className={styles.createButton} href="/leads/new"><Plus size={14} /> New lead</Link>
+          <button className={styles.menuButton} onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-controls="mobile-navigation" aria-label={menuOpen ? "Close navigation" : "Open navigation"}>{menuOpen ? <X size={18}/> : <Menu size={18}/>}</button>
         </div>
-      </aside>
-      <div className={styles.content} id="main-content">
-        {children}
+      </div>
+      {menuOpen && <div id="mobile-navigation" className={styles.mobileMenu}>{navigation(true)}<Link className={styles.mobileCreate} href="/leads/new">Create a new lead <span>→</span></Link></div>}
+    </header>
+
+    <div className={styles.workspaceBar}>
+      <div className={styles.workspaceBarInner}>
+        <label className={styles.workspaceSelect}><span>{activeBusiness?.name?.slice(0,1).toUpperCase() || "W"}</span><span className={styles.workspaceText}><small>Active workspace</small><select value={activeBusinessId} onChange={(event) => switchBusiness(event.target.value)} disabled={!businesses.length} aria-label="Active workspace"><option value="">{workspaceError || "Loading workspace…"}</option>{businesses.map((business) => <option value={business.id} key={business.id}>{business.name}</option>)}</select></span><ChevronDown size={13}/></label>
+        <nav className={styles.quickViews} aria-label="Quick views">{quickLinks.map((link) => { const Icon = link.icon; const active = pathname === "/leads" && searchParams.get("status") === link.href.split("=")[1]; return <Link className={active ? styles.activeQuick : ""} href={link.href} key={link.href}><Icon size={13}/>{link.label}</Link>; })}</nav>
+        <div className={styles.accountMenu}><Link href="/profile" className={styles.account}>{user?.profile_pic ? <img src={user.profile_pic} alt=""/> : <span>{initials}</span>}<span><strong>{user?.display_name || "CRM operator"}</strong><small>{user?.email || "Loading account…"}</small></span></Link><button onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={15}/></button></div>
       </div>
     </div>
-  );
+    <div className={styles.content} id="main-content">{children}</div>
+  </div>;
 }
