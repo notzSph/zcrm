@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
+from app.caldav import CalDAVError, delete_event, sync_reminder
 from app.domain_models import Activity, ActivityType, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, Reminder, ReminderKind
 from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate
 from app.security import RequestContext, get_db, require_context
@@ -125,7 +126,13 @@ def delete_lead(lead_id: uuid.UUID, context: RequestContext = Depends(require_co
 
 @router.post("/leads/{lead_id}/reminders", response_model=ReminderOut, status_code=201)
 def create_reminder(lead_id: uuid.UUID, payload: ReminderCreate, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Reminder:
-    get_lead_or_404(db, lead_id, context.business.id); reminder = Reminder(lead_id=lead_id, **payload.model_dump()); db.add(reminder); db.flush(); db.add(Activity(lead_id=lead_id, event_type=ActivityType.reminder_created, payload={"title": reminder.title, "kind": reminder.kind.value})); db.commit(); db.refresh(reminder); return reminder
+    lead = get_lead_or_404(db, lead_id, context.business.id); reminder = Reminder(lead_id=lead_id, **payload.model_dump()); db.add(reminder); db.flush()
+    try:
+        synced = sync_reminder(reminder, lead)
+    except CalDAVError as exc:
+        db.rollback(); raise HTTPException(status_code=502, detail=str(exc)) from exc
+    if synced: reminder.caldav_uid, reminder.caldav_url = synced
+    db.add(Activity(lead_id=lead_id, event_type=ActivityType.reminder_created, payload={"title": reminder.title, "kind": reminder.kind.value})); db.commit(); db.refresh(reminder); return reminder
 
 def reminder_for_business(db: Session, reminder_id: uuid.UUID, business_id: uuid.UUID) -> Reminder:
     reminder = db.scalar(select(Reminder).join(Lead).where(Reminder.id == reminder_id, Lead.business_id == business_id))
@@ -137,12 +144,22 @@ def update_reminder(reminder_id: uuid.UUID, payload: ReminderUpdate, context: Re
     reminder = reminder_for_business(db, reminder_id, context.business.id); changes = payload.model_dump(exclude_unset=True, exclude={"completed"}); changed = [k for k, v in changes.items() if getattr(reminder, k) != v]
     for key, value in changes.items(): setattr(reminder, key, value)
     if payload.completed is not None: reminder.completed_at = datetime.now(UTC) if payload.completed else None
+    try:
+        synced = sync_reminder(reminder, reminder.lead)
+    except CalDAVError as exc:
+        db.rollback(); raise HTTPException(status_code=502, detail=str(exc)) from exc
+    if synced: reminder.caldav_uid, reminder.caldav_url = synced
     if changed or payload.completed is not None: db.add(Activity(lead_id=reminder.lead_id, event_type=ActivityType.reminder_updated, payload={"fields": changed, "title": reminder.title}))
     db.commit(); db.refresh(reminder); return reminder
 
 @router.delete("/reminders/{reminder_id}", status_code=204)
 def delete_reminder(reminder_id: uuid.UUID, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> None:
-    reminder = reminder_for_business(db, reminder_id, context.business.id); db.delete(reminder); db.commit()
+    reminder = reminder_for_business(db, reminder_id, context.business.id)
+    try:
+        delete_event(reminder)
+    except CalDAVError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    db.delete(reminder); db.commit()
 
 @router.get("/reminders", response_model=list[ReminderOut])
 def list_reminders(bucket: Literal["overdue", "today", "upcoming"] | None = None, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> list[Reminder]:

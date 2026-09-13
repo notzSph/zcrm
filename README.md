@@ -32,7 +32,7 @@ A lean CRM for tracking outbound opportunities, their pipeline status, and follo
    ```
 
 3. Put the resulting hash in `infra/.env` as `ADMIN_PASSWORD_HASH`. Set a long
-   random `JWT_SECRET` and `JAYZOO_API_KEY` too.
+   random `JAYZOO_API_KEY` too.
 
 4. Start the stack:
 
@@ -110,3 +110,13 @@ RUN_POSTGRES_TESTS=1 DATABASE_URL='postgresql+psycopg://...' pytest -q
 Password reset delivery uses SMTP. Set `PUBLIC_APP_URL`, `SMTP_HOST`,
 `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, and `SMTP_STARTTLS`
 in `infra/.env`. Reset responses never expose tokens; links are sent by email.
+
+CalDAV reminder sync is disabled by default. To sync zCRM reminders to an iCloud
+calendar, set `CALDAV_ENABLED=true`, then fill in `CALDAV_USERNAME`,
+`CALDAV_APP_PASSWORD`, and `CALDAV_CALENDAR_NAME` in `infra/.env`. The app-specific
+password is generated from Apple Account settings; do not use the normal Apple
+Account password. Creating or updating a reminder writes a timed event, and
+deleting a reminder removes its synced event.
+
+After restarting the stack, verify discovery with `GET /api/v1/calendar/caldav`
+while logged in. A successful response includes the discovered calendar URL.

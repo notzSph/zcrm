@@ -145,6 +145,8 @@ class Reminder(Base):
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     external_ref: Mapped[str | None] = mapped_column(String(255), index=True)
+    caldav_uid: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    caldav_url: Mapped[str | None] = mapped_column(String(1024))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     lead: Mapped[Lead] = relationship(back_populates="reminders")
 
