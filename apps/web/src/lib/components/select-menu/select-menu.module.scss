@@ -1,0 +1,53 @@
+@use "@/lib/styles/variables" as *;
+
+.root { position: relative; min-width: 0; }
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .625rem .75rem;
+  color: $zTextSoft;
+  border: 1px solid $zLineStrong;
+  border-radius: .75rem;
+  background: rgba($zBg2, .92);
+  text-align: left;
+  font-size: .9375rem;
+  font-weight: 700;
+}
+.trigger:hover, .trigger[aria-expanded="true"] { color: $zText; border-color: rgba($zLavender, .58); background: $zBg3; }
+.trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trigger[data-tone="violet"] { color: $zLavender; background: rgba($zViolet, .14); }
+.trigger[data-tone="yellow"] { color: $amber; background: rgba($amber, .1); }
+.trigger[data-tone="green"] { color: $zGreen; background: rgba($zGreen, .1); }
+.trigger[data-tone="red"] { color: $red; background: rgba($red, .1); }
+.chevron { margin-left: auto; transition: transform .15s ease; }
+.trigger[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+.count { min-width: 1.5rem; padding: .1rem .4rem; border-radius: 999px; background: rgba($white, .08); color: inherit; font: 600 .75rem var(--font-mono); text-align: center; }
+.menu {
+  position: absolute;
+  top: calc(100% + .4rem);
+  left: 0;
+  z-index: 60;
+  display: grid;
+  width: max(100%, 13.5rem);
+  max-height: min(22rem, 60vh);
+  padding: .4rem;
+  overflow-y: auto;
+  border: 1px solid $zLineStrong;
+  border-radius: .875rem;
+  background: rgba($zBg1, .98);
+  box-shadow: 0 20px 60px rgba($black, .38), inset 0 1px rgba($white, .04);
+  backdrop-filter: blur(18px);
+}
+.menu li { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto auto; align-items: center; gap: .5rem; min-height: 2.5rem; padding: .5rem .625rem; color: $zTextSoft; border-radius: .6rem; cursor: pointer; font-size: .875rem; outline: 0; }
+.menu li:hover, .menu li:focus-visible { color: $zText; background: $zBg3; }
+.menu li[aria-selected="true"] { background: rgba($zViolet, .14); }
+.menu li[data-tone="violet"] > svg:first-child { color: $zLavender; }
+.menu li[data-tone="yellow"] > svg:first-child { color: $amber; }
+.menu li[data-tone="green"] > svg:first-child { color: $zGreen; }
+.menu li[data-tone="red"] > svg:first-child { color: $red; }
+.menu small { min-width: 1.5rem; color: $zTextMuted; font: 500 .75rem var(--font-mono); text-align: right; }
+.compact .trigger { width: auto; min-width: 10rem; min-height: 2.5rem; padding: .45rem .65rem; font-size: .875rem; }
+@media (max-width: 520px) { .compact, .compact .trigger { width: 100%; } .menu { width: 100%; } }

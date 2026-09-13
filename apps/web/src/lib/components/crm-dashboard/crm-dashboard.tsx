@@ -7,15 +7,20 @@ import { useRouter } from "next/navigation";
 import {
   Activity as ActivityIcon,
   AlarmClock,
+  BadgeEuro,
   Bell,
   CalendarDays,
   Check,
   ChevronRight,
   CirclePlus,
+  CircleX,
   FileText,
   MessageSquareText,
   Pencil,
   Plus,
+  Radio,
+  Send,
+  Sprout,
   Trash2,
   Trophy,
   Target as TargetIcon,
@@ -24,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/select-menu";
 import {
   ActivityType,
   LeadStatus,
@@ -31,7 +37,7 @@ import {
   type Lead,
   type Reminder,
 } from "@/lib/types";
-import { leadStatusOptions, reminderKindOptions } from "@/lib/options";
+import { reminderKindOptions } from "@/lib/options";
 import styles from "./crm-dashboard.module.scss";
 
 const stages: {
@@ -56,6 +62,16 @@ const outcomes: LeadStatus[] = [
   LeadStatus.Won,
   LeadStatus.Lost,
   LeadStatus.Nurture,
+];
+const statusMenuOptions: SelectMenuOption<LeadStatus>[] = [
+  { value: LeadStatus.Target, label: "Target", icon: TargetIcon, tone: "violet" },
+  { value: LeadStatus.Connected, label: "Connected", icon: Radio, tone: "violet" },
+  { value: LeadStatus.Contacted, label: "Contacted", icon: Send, tone: "violet" },
+  { value: LeadStatus.Meeting, label: "Meeting", icon: CalendarDays, tone: "yellow" },
+  { value: LeadStatus.Proposal, label: "Proposal", icon: FileText, tone: "violet" },
+  { value: LeadStatus.Won, label: "Won", icon: Trophy, tone: "green" },
+  { value: LeadStatus.Lost, label: "Lost", icon: CircleX, tone: "red" },
+  { value: LeadStatus.Nurture, label: "Nurture", icon: Sprout, tone: "green" },
 ];
 
 function dateLabel(value: string) {
@@ -345,46 +361,35 @@ export default function CrmDashboard() {
       {error && (
         <div className={styles.error}>
           {error}
-          <button onClick={() => setError("")}>
-            <X size={15} />
+          <button aria-label="Dismiss error" title="Dismiss" onClick={() => setError("")}>
+            <X size={15} aria-hidden="true" />
           </button>
         </div>
       )}
       <div className={styles.dashboardTop}>
-        <section className={styles.metricCard}>
-          <span>
-            <ActivityIcon size={14} /> Open pipeline
-          </span>
-          <strong>
-            {leads.filter((lead) => !outcomes.includes(lead.status)).length}
-          </strong>
-        </section>
-        <section className={styles.metricCard}>
-          <span>
-            <Bell size={14} /> Follow-ups today
-          </span>
+        <Link className={styles.metricCard} href="/leads">
+          <span><ActivityIcon size={14} /> Open pipeline</span>
+          <strong>{leads.filter((lead) => !outcomes.includes(lead.status)).length}</strong>
+          <small>Review active opportunities <ChevronRight size={13} /></small>
+        </Link>
+        <Link className={styles.metricCard} href="/calendar">
+          <span><Bell size={14} /> Follow-ups today</span>
           <strong>{dueToday.length}</strong>
-        </section>
-        <section
+          <small>Open calendar <ChevronRight size={13} /></small>
+        </Link>
+        <Link
           className={`${styles.metricCard} ${overdue.length ? styles.danger : ""}`}
+          href="/calendar"
         >
-          <span>
-            <AlarmClock size={14} /> Pipeline health
-          </span>
+          <span><AlarmClock size={14} /> Pipeline health</span>
           <strong>{overdue.length}</strong>
-          <small>
-            {overdue.length ? "overdue" : "no overdue"} ·{" "}
-            {leads.filter((lead) => outcomes.includes(lead.status)).length}{" "}
-            closed
-          </small>
-        </section>
-        <section className={styles.metricCard}>
-          <span>
-            <Users size={14} /> Total leads
-          </span>
+          <small>{overdue.length ? "overdue" : "no overdue"} · {leads.filter((lead) => outcomes.includes(lead.status)).length} closed</small>
+        </Link>
+        <Link className={styles.metricCard} href="/leads">
+          <span><Users size={14} /> Total leads</span>
           <strong>{leads.length}</strong>
-          <small>active workspace</small>
-        </section>
+          <small>Browse directory <ChevronRight size={13} /></small>
+        </Link>
 
         <section className={styles.reminderStrip}>
           <div className={styles.reminderTitle}>
@@ -490,6 +495,7 @@ export default function CrmDashboard() {
                     <button
                       className={styles.card}
                       key={lead.id}
+                      aria-label={`Open ${lead.company} lead details`}
                       onClick={() => setSelected(lead)}
                       draggable
                       onDragStart={(event) => {
@@ -504,15 +510,22 @@ export default function CrmDashboard() {
                     >
                       <div className={styles.cardTop}>
                         <strong>{lead.company}</strong>
-                        <em
-                          className={styles.statusChip}
-                          data-status={lead.status}
-                        >
-                          {lead.status}
-                        </em>
+                        {outcomes.includes(lead.status) && (
+                          <em className={styles.statusChip} data-status={lead.status}>
+                            {lead.status}
+                          </em>
+                        )}
                       </div>
                       <span>{lead.contact_name || "No contact yet"}</span>
                       {lead.next_action && <p>{lead.next_action}</p>}
+                      {(lead.estimated_value != null || lead.source) && (
+                        <div className={styles.cardMeta}>
+                          {lead.estimated_value != null && (
+                            <span><BadgeEuro size={12} />{lead.estimated_value.toLocaleString()}</span>
+                          )}
+                          {lead.source && <span>{lead.source}</span>}
+                        </div>
+                      )}
                       {leadReminder(lead) && (
                         <small
                           className={styles.dueChip}
@@ -614,8 +627,8 @@ function Modal({
       <div className={styles.modal}>
         <div className={styles.modalHead}>
           <h2>{title}</h2>
-          <button onClick={onClose}>
-            <X size={18} />
+          <button aria-label={`Close ${title}`} title="Close" onClick={onClose}>
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
         {children}
@@ -696,8 +709,8 @@ function LeadDrawer({
             <span>Lead record</span>
             <h2>{lead.company}</h2>
           </div>
-          <button onClick={onClose}>
-            <X size={19} />
+          <button aria-label="Close lead panel" title="Close" onClick={onClose}>
+            <X size={19} aria-hidden="true" />
           </button>
         </div>
         <Link className={styles.drawerPageLink} href={`/leads/${lead.id}`}>
@@ -718,16 +731,12 @@ function LeadDrawer({
           </label>
           <label>
             Status
-            <select
+            <SelectMenu
+              label="Lead status"
+              options={statusMenuOptions}
               value={status}
-              onChange={(event) => setStatus(event.target.value as LeadStatus)}
-            >
-              {leadStatusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              onChange={setStatus}
+            />
           </label>
           <label>
             Contact name
@@ -803,6 +812,8 @@ function LeadDrawer({
                 <>
                   <button
                     disabled={Boolean(reminder.completed_at)}
+                    aria-label={reminder.completed_at ? `${reminder.title} completed` : `Complete ${reminder.title}`}
+                    title={reminder.completed_at ? "Completed" : "Complete reminder"}
                     onClick={() => onCompleteReminder(reminder)}
                   >
                     {reminder.completed_at ? <Check size={14} /> : <span />}
@@ -820,6 +831,7 @@ function LeadDrawer({
                   <div className={styles.reminderActions}>
                     <button
                       type="button"
+                      aria-label={`Edit ${reminder.title}`}
                       title="Edit reminder"
                       onClick={() => setEditingReminderId(reminder.id)}
                     >
@@ -827,6 +839,7 @@ function LeadDrawer({
                     </button>
                     <button
                       type="button"
+                      aria-label={`Delete ${reminder.title}`}
                       title="Delete reminder"
                       onClick={() => onDeleteReminder(reminder.id)}
                     >

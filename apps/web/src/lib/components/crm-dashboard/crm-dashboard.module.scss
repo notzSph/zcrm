@@ -25,7 +25,7 @@
   color: $zTextMuted;
   font-size: .9375rem;
 }
-
+.headerActions { display: flex; align-items: center; gap: .75rem; }
 
 .primary,
 .ghost {
@@ -548,8 +548,10 @@
 .metricCard { display:grid; align-content:center; gap:7px; width:100%; min-width:0; padding:18px 14px; border:1px solid $zLine; border-radius:12px; background:linear-gradient(145deg,rgba($zBg1,.96),rgba($zBg2,.8)); }
 .metricCard > span { display:flex; align-items:center; gap:6px; color:$zLavender; font-size:.8125rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
 .metricCard > strong { color:$zText; font:500 28px var(--font-mono); }
-.metricCard > small { color:$zTextMuted; font-size:.8125rem; }
-.metricCard.danger > strong { color:$zPink; }
+.metricCard > small { display:flex; align-items:center; gap:.3rem; color:$zTextMuted; font-size:.8125rem; }
+.metricCard:hover > small { color:$zTextSoft; }
+.metricCard.danger { border-color: rgba($red, .3); }
+.metricCard.danger > span, .metricCard.danger > strong { color:$red; }
 .snapshotCard { display:grid; align-content:center; gap:8px; min-width:0; padding:20px; border:1px solid $zLine; border-radius:12px; background:linear-gradient(145deg,rgba($zBg1,.96),rgba($zBg2,.8)); }
 .snapshotCard > span { display:flex; align-items:center; gap:6px; color:$zLavender; font-size:.875rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
 .snapshotCard > strong { color:$zText; font:500 30px var(--font-mono); }
@@ -639,6 +641,12 @@
 .card { border-radius: 12px; }
 .card:hover { transform: translateY(-3px); }
 .statusChip, .dueChip { border-radius: 999px; }
+.statusChip[data-status="meeting"], .dueChip[data-due="today"] { color: $amber; background: rgba($amber, .11); }
+.statusChip[data-status="won"] { color: $zGreen; background: rgba($zGreen, .1); }
+.statusChip[data-status="lost"], .dueChip[data-due="overdue"] { color: $red; background: rgba($red, .1); }
+.cardMeta { display:flex; flex-wrap:wrap; gap:.4rem; }
+.cardMeta span { display:inline-flex; align-items:center; gap:.25rem; max-width:100%; padding:.25rem .5rem; overflow:hidden; color:$zLavender; border:1px solid rgba($zLavender,.18); border-radius:999px; background:rgba($zViolet,.08); font:500 .75rem var(--font-mono); text-overflow:ellipsis; white-space:nowrap; }
+.cardMeta span:first-child { color:$zGreen; border-color:rgba($zGreen,.18); background:rgba($zGreen,.07); }
 
 /* Readable CRM layout, adapted from zSpinach surfaces and controls. */
 
