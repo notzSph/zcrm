@@ -107,6 +107,10 @@ class ReminderCreate(BaseModel):
     title: str = Field(min_length=1, max_length=280)
     kind: ReminderKind = ReminderKind.follow_up
     due_at: datetime
+    location: str | None = Field(default=None, max_length=512)
+    duration_minutes: int = Field(default=30, ge=1, le=1440)
+    travel_minutes: int = Field(default=0, ge=0, le=1440)
+    alarm_minutes_before: list[int] = Field(default_factory=lambda: [120, 60], min_length=0, max_length=8)
     external_ref: str | None = Field(default=None, max_length=255)
 
 
@@ -114,6 +118,10 @@ class ReminderUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=280)
     kind: ReminderKind | None = None
     due_at: datetime | None = None
+    location: str | None = Field(default=None, max_length=512)
+    duration_minutes: int | None = Field(default=None, ge=1, le=1440)
+    travel_minutes: int | None = Field(default=None, ge=0, le=1440)
+    alarm_minutes_before: list[int] | None = Field(default=None, min_length=0, max_length=8)
     completed: bool | None = None
 
 
@@ -124,6 +132,10 @@ class ReminderOut(BaseModel):
     title: str
     kind: ReminderKind
     due_at: datetime
+    location: str | None
+    duration_minutes: int
+    travel_minutes: int
+    alarm_minutes_before: list[int]
     completed_at: datetime | None
     external_ref: str | None
 

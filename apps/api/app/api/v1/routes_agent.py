@@ -7,6 +7,7 @@ from app.domain_models import Interaction, Lead, Reminder
 from app.domain_schemas import InteractionCreate, InteractionOut, LeadCreate, LeadOut, ReminderCreate, ReminderOut, StatusUpdate
 from app.security import RequestContext, get_db, require_agent_context
 from app.api.v1.routes_leads import get_lead_or_404
+from app.caldav import CalDAVError, sync_reminder
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -42,8 +43,14 @@ def create_interaction(lead_id: uuid.UUID, payload: InteractionCreate, context: 
 
 @router.post("/leads/{lead_id}/reminders", response_model=ReminderOut, status_code=201)
 def create_reminder(lead_id: uuid.UUID, payload: ReminderCreate, context: RequestContext = Depends(require_agent_context), db: Session = Depends(get_db)) -> Reminder:
-    get_lead_or_404(db, lead_id, context.business.id)
+    lead = get_lead_or_404(db, lead_id, context.business.id)
     if payload.external_ref:
         existing = db.scalar(select(Reminder).join(Lead).where(Reminder.lead_id == lead_id, Reminder.external_ref == payload.external_ref, Lead.business_id == context.business.id))
         if existing: return existing
-    reminder = Reminder(lead_id=lead_id, **payload.model_dump()); db.add(reminder); db.commit(); db.refresh(reminder); return reminder
+    reminder = Reminder(lead_id=lead_id, **payload.model_dump()); db.add(reminder); db.flush()
+    try:
+        synced = sync_reminder(reminder, lead)
+    except CalDAVError as exc:
+        db.rollback(); raise HTTPException(status_code=502, detail=str(exc)) from exc
+    if synced: reminder.caldav_uid, reminder.caldav_url = synced
+    db.commit(); db.refresh(reminder); return reminder

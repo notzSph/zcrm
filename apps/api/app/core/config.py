@@ -24,7 +24,6 @@ class Settings(BaseModel):
     caldav_calendar_name: str = os.getenv("CALDAV_CALENDAR_NAME", "Work")
     caldav_calendar_url: str = os.getenv("CALDAV_CALENDAR_URL", "")
     caldav_timeout_seconds: int = int(os.getenv("CALDAV_TIMEOUT_SECONDS", "15"))
-    caldav_event_duration_minutes: int = int(os.getenv("CALDAV_EVENT_DURATION_MINUTES", "30"))
 
 
 settings = Settings()
