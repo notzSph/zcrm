@@ -27,7 +27,9 @@ def configured() -> bool:
 
 
 def _href(response: ET.Element) -> str:
-    value = response.findtext("d:propstat/d:prop/d:current-user-principal/d:href", namespaces=NS)
+    value = response.findtext(".//d:current-user-principal/d:href", namespaces=NS)
+    if not value:
+        value = response.findtext(".//d:principal-URL/d:href", namespaces=NS)
     if not value:
         raise CalDAVError("CalDAV account did not return a principal URL")
     return value.strip()
