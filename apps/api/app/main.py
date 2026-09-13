@@ -8,6 +8,7 @@ from app.api.v1.routes_auth import router as auth_router
 from app.api.v1.routes_businesses import router as businesses_router
 from app.api.v1.routes_context import router as context_router
 from app.api.v1.routes_leads import router as leads_router
+from app.api.v1.routes_calendar import router as calendar_router
 from app.api.v1.routes_agent import router as agent_router
 from app.core.config import settings
 from app.deps import get_db
@@ -46,4 +47,5 @@ app.include_router(auth_router, prefix="/api/v1/auth")
 app.include_router(context_router, prefix="/api/v1")
 app.include_router(businesses_router, prefix="/api/v1")
 app.include_router(leads_router, prefix="/api/v1")
+app.include_router(calendar_router, prefix="/api/v1")
 app.include_router(agent_router, prefix="/api/v1")
