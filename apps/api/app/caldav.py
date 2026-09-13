@@ -113,15 +113,16 @@ def _event_payload(reminder: Reminder, lead: Lead, uid: str) -> bytes:
     description = f"zCRM lead: {lead.company}"
     if lead.contact_name:
         description += f"\\nContact: {lead.contact_name}"
-    travel_each_way = reminder.travel_minutes // 2
-    start = reminder.due_at - timedelta(minutes=travel_each_way)
-    end = reminder.due_at + timedelta(minutes=reminder.duration_minutes + reminder.travel_minutes - travel_each_way)
+    start = reminder.due_at
+    end = reminder.due_at + timedelta(minutes=reminder.duration_minutes)
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//zCRM//CalDAV//EN", "BEGIN:VEVENT",
              f"UID:{uid}", f"DTSTAMP:{_ics_datetime(datetime.now(UTC))}",
              f"DTSTART:{_ics_datetime(start)}", f"DTEND:{_ics_datetime(end)}",
-             f"SUMMARY:{_escape(reminder.title)}", f"DESCRIPTION:{_escape(description)}"]
+             "SEQUENCE:1", f"SUMMARY:{_escape(reminder.title)}", f"DESCRIPTION:{_escape(description)}"]
     if reminder.location:
         lines.append(f"LOCATION:{_escape(reminder.location)}")
+    if reminder.travel_minutes:
+        lines.append(f"X-APPLE-TRAVEL-DURATION;VALUE=DURATION:PT{reminder.travel_minutes}M")
     lines.extend(["STATUS:CONFIRMED"])
     for minutes in reminder.alarm_minutes_before:
         if minutes > 0:
