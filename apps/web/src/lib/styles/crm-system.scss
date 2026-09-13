@@ -1,9 +1,7 @@
 @use "./variables" as *;
 
-/* zSpinach-derived application primitives: signal rails, glass surfaces, mono labels. */
-body::before, body::after { position:fixed; inset:0; z-index:-2; pointer-events:none; content:""; }
-body::before { background:radial-gradient(circle at 78% 5%,rgba($zViolet,.17),transparent 30rem),radial-gradient(circle at 12% 28%,rgba($zCyan,.065),transparent 25rem),radial-gradient(circle at 50% 110%,rgba($zViolet,.11),transparent 38rem); }
-body::after { z-index:-1; opacity:.2; background-image:linear-gradient(rgba($zLavender,.11) 1px,transparent 1px),linear-gradient(90deg,rgba($zLavender,.11) 1px,transparent 1px); background-size:64px 64px; mask-image:linear-gradient(to bottom,black,transparent 68%); }
+/* zSpinach-derived application primitives: glass surfaces and mono labels.
+   The reference signal-field background is intentionally excluded from zCRM. */
 
 [class*="module__page"] { width:min(100%,1400px); min-height:calc(100vh - 125px); margin:0 auto; padding:clamp(2rem,5vw,4.5rem) clamp(1rem,3vw,2rem) 5rem; }
 [class*="module__header"] { position:relative; }
