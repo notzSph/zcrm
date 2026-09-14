@@ -173,6 +173,7 @@ class Reminder(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     lead_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), index=True)
+    owner_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     title: Mapped[str] = mapped_column(String(280))
     kind: Mapped[ReminderKind] = mapped_column(Enum(ReminderKind, name="reminder_kind"), default=ReminderKind.follow_up, index=True)
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
@@ -186,6 +187,7 @@ class Reminder(Base):
     caldav_url: Mapped[str | None] = mapped_column(String(1024))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     lead: Mapped[Lead] = relationship(back_populates="reminders")
+    owner_user: Mapped[User | None] = relationship(foreign_keys=[owner_user_id])
 
     @property
     def calendar_synced(self) -> bool:

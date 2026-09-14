@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import base64
+import json
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
@@ -10,7 +12,7 @@ from urllib.request import Request, urlopen
 from xml.etree import ElementTree as ET
 
 from app.core.config import settings
-from app.domain_models import Lead, Reminder
+from app.domain_models import Lead, Reminder, User
 
 DAV_NS = "DAV:"
 CALDAV_NS = "urn:ietf:params:xml:ns:caldav"
@@ -22,8 +24,35 @@ class CalDAVError(RuntimeError):
     """A user-safe error raised when the configured calendar cannot be reached."""
 
 
-def configured() -> bool:
-    return settings.caldav_enabled and bool(settings.caldav_username and settings.caldav_app_password)
+@dataclass(frozen=True)
+class CalDAVConfig:
+    username: str
+    app_password: str
+    calendar_name: str
+    calendar_url: str
+
+
+def config_for_user(user: User | None = None) -> CalDAVConfig:
+    config = CalDAVConfig(settings.caldav_username, settings.caldav_app_password, settings.caldav_calendar_name, settings.caldav_calendar_url)
+    if not user or not settings.caldav_profiles_json:
+        return config
+    try:
+        profiles = json.loads(settings.caldav_profiles_json)
+    except json.JSONDecodeError as exc:
+        raise CalDAVError("CALDAV_PROFILES_JSON is invalid") from exc
+    if not isinstance(profiles, dict):
+        raise CalDAVError("CALDAV_PROFILES_JSON must be an object keyed by user email")
+    profile = profiles.get(user.email.casefold())
+    if not profile:
+        return config
+    if not isinstance(profile, dict):
+        raise CalDAVError(f"CalDAV profile for {user.email} is invalid")
+    return CalDAVConfig(profile.get("username", ""), profile.get("app_password", ""), profile.get("calendar_name", config.calendar_name), profile.get("calendar_url", ""))
+
+
+def configured(user: User | None = None) -> bool:
+    config = config_for_user(user)
+    return settings.caldav_enabled and bool(config.username and config.app_password)
 
 
 def _href(response: ET.Element) -> str:
@@ -35,8 +64,8 @@ def _href(response: ET.Element) -> str:
     return value.strip()
 
 
-def _request(url: str, method: str, body: bytes | None = None, content_type: str = "application/xml; charset=utf-8") -> ET.Element | None:
-    auth = base64.b64encode(f"{settings.caldav_username}:{settings.caldav_app_password}".encode()).decode()
+def _request(url: str, method: str, config: CalDAVConfig, body: bytes | None = None, content_type: str = "application/xml; charset=utf-8") -> ET.Element | None:
+    auth = base64.b64encode(f"{config.username}:{config.app_password}".encode()).decode()
     request = Request(url, data=body, method=method, headers={
         "Authorization": f"Basic {auth}",
         "Content-Type": content_type,
@@ -57,9 +86,9 @@ def _request(url: str, method: str, body: bytes | None = None, content_type: str
         raise CalDAVError("CalDAV returned invalid XML") from exc
 
 
-def _propfind(url: str, properties: str, depth: str = "0") -> ET.Element:
+def _propfind(url: str, properties: str, config: CalDAVConfig, depth: str = "0") -> ET.Element:
     body = f'<d:propfind xmlns:d="{DAV_NS}" xmlns:c="{CALDAV_NS}"><d:prop>{properties}</d:prop></d:propfind>'.encode()
-    auth = base64.b64encode(f"{settings.caldav_username}:{settings.caldav_app_password}".encode()).decode()
+    auth = base64.b64encode(f"{config.username}:{config.app_password}".encode()).decode()
     request = Request(url, data=body, method="PROPFIND", headers={
         "Authorization": f"Basic {auth}",
         "Content-Type": "application/xml; charset=utf-8",
@@ -82,15 +111,16 @@ def _first_href(root: ET.Element, property_name: str, namespace: str = DAV_NS) -
     return value.strip()
 
 
-def calendar_url() -> str:
-    if settings.caldav_calendar_url:
-        return settings.caldav_calendar_url.rstrip("/") + "/"
-    principal_response = _propfind(settings.caldav_url, "<d:current-user-principal/>")
+def calendar_url(user: User | None = None) -> str:
+    config = config_for_user(user)
+    if config.calendar_url:
+        return config.calendar_url.rstrip("/") + "/"
+    principal_response = _propfind(settings.caldav_url, "<d:current-user-principal/>", config)
     principal_url = urljoin(settings.caldav_url, _href(principal_response))
-    principal = _propfind(principal_url, "<c:calendar-home-set/>")
+    principal = _propfind(principal_url, "<c:calendar-home-set/>", config)
     home_url = urljoin(principal_url, _first_href(principal, "calendar-home-set", CALDAV_NS))
-    calendars = _propfind(home_url, "<d:resourcetype/><d:displayname/>", depth="1")
-    wanted = settings.caldav_calendar_name.casefold()
+    calendars = _propfind(home_url, "<d:resourcetype/><d:displayname/>", config, depth="1")
+    wanted = config.calendar_name.casefold()
     for response in calendars.findall("d:response", NS):
         name = response.findtext("d:propstat/d:prop/d:displayname", namespaces=NS) or ""
         resource_type = response.find("d:propstat/d:prop/d:resourcetype", NS)
@@ -98,7 +128,7 @@ def calendar_url() -> str:
             href = response.findtext("d:href", namespaces=NS)
             if href:
                 return urljoin(home_url, href).rstrip("/") + "/"
-    raise CalDAVError(f'CalDAV calendar "{settings.caldav_calendar_name}" was not found')
+    raise CalDAVError(f'CalDAV calendar "{config.calendar_name}" was not found')
 
 
 def _ics_datetime(value: datetime) -> str:
@@ -131,15 +161,16 @@ def _event_payload(reminder: Reminder, lead: Lead, uid: str) -> bytes:
     return ("\r\n".join(lines) + "\r\n").encode()
 
 
-def sync_reminder(reminder: Reminder, lead: Lead) -> tuple[str, str] | None:
-    if not configured():
+def sync_reminder(reminder: Reminder, lead: Lead, user: User | None = None) -> tuple[str, str] | None:
+    if not configured(user):
         return None
+    config = config_for_user(user)
     uid = reminder.caldav_uid or f"zcrm-{reminder.id}@zcrm"
-    event_url = reminder.caldav_url or urljoin(calendar_url(), f"{uid}.ics")
-    _request(event_url, "PUT", _event_payload(reminder, lead, uid), "text/calendar; charset=utf-8")
+    event_url = reminder.caldav_url or urljoin(calendar_url(user), f"{uid}.ics")
+    _request(event_url, "PUT", config, _event_payload(reminder, lead, uid), "text/calendar; charset=utf-8")
     return uid, event_url
 
 
-def delete_event(reminder: Reminder) -> None:
-    if configured() and reminder.caldav_url:
-        _request(reminder.caldav_url, "DELETE")
+def delete_event(reminder: Reminder, user: User | None = None) -> None:
+    if configured(user) and reminder.caldav_url:
+        _request(reminder.caldav_url, "DELETE", config_for_user(user))
