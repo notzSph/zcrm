@@ -135,6 +135,7 @@ class LeadUpload(Base):
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     source: Mapped[str] = mapped_column(String(64), default="user", server_default="user")
     idempotency_key: Mapped[str | None] = mapped_column(String(255), index=True)
+    request_hash: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

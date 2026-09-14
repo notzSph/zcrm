@@ -178,10 +178,13 @@ def initiate_attachment_upload(lead_id: uuid.UUID, payload: UploadInitiate, idem
     get_lead_or_404(db, lead_id, context.business.id)
     filename = Path(payload.filename).name
     if not filename or filename in {".", ".."}: raise HTTPException(status_code=400, detail="Invalid filename")
+    request_hash = hashlib.sha256(json.dumps(payload.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     if idempotency_key:
         existing = db.scalar(select(LeadUpload).join(Lead).where(LeadUpload.lead_id == lead_id, LeadUpload.idempotency_key == idempotency_key, Lead.business_id == context.business.id))
-        if existing: return existing
-    upload = LeadUpload(lead_id=lead_id, filename=filename, content_type=payload.content_type, kind=payload.kind, size_bytes=payload.size_bytes, idempotency_key=idempotency_key, actor_user_id=context.user.id if context.user else None, source="agent" if context.is_agent else "user")
+        if existing:
+            if existing.request_hash != request_hash: raise HTTPException(status_code=409, detail="Idempotency key was used with a different request")
+            return existing
+    upload = LeadUpload(lead_id=lead_id, filename=filename, content_type=payload.content_type, kind=payload.kind, size_bytes=payload.size_bytes, idempotency_key=idempotency_key, request_hash=request_hash, actor_user_id=context.user.id if context.user else None, source="agent" if context.is_agent else "user")
     db.add(upload); db.commit(); db.refresh(upload)
     return upload
 
