@@ -32,6 +32,7 @@ export default function BusinessesPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
   const load = async () => {
     try {
       const response = await fetch("/api/businesses", { cache: "no-store" });
@@ -42,16 +43,20 @@ export default function BusinessesPage() {
       setError("Could not load your businesses.");
     }
   };
+
   useEffect(() => {
     load().finally(() => setLoading(false));
   }, []);
+
   const update = (key: keyof typeof emptyForm, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
   const manage = (id: string) => router.push(`/businesses/${id}`);
+
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
     setError("");
+
     try {
       const url = editing ? `/api/businesses/${editing.id}` : "/api/businesses";
       const response = await fetch(url, {
@@ -66,6 +71,7 @@ export default function BusinessesPage() {
         }),
       });
       if (!response.ok) throw new Error();
+
       const business = (await response.json()) as Business;
       const wasEditing = Boolean(editing);
       setForm(emptyForm);
@@ -82,6 +88,7 @@ export default function BusinessesPage() {
       setSaving(false);
     }
   };
+
   const startEdit = (business: Business) => {
     setEditing(business);
     setForm({
@@ -91,8 +98,9 @@ export default function BusinessesPage() {
       industry: business.industry || "",
       description: business.description || "",
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.location.hash = "workspace-form";
   };
+
   const remove = async (business: Business) => {
     if (
       !window.confirm(
@@ -100,6 +108,7 @@ export default function BusinessesPage() {
       )
     )
       return;
+
     const response = await fetch(`/api/businesses/${business.id}`, {
       method: "DELETE",
     });
@@ -109,167 +118,131 @@ export default function BusinessesPage() {
     }
     await load();
   };
+
+  const cancelEdit = () => {
+    setEditing(null);
+    setForm(emptyForm);
+  };
+
   return (
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
           <span className={styles.eyebrow}>
-            <Building2 size={15}  aria-hidden="true" /> Workspace directory
+            <Building2 size={15} aria-hidden="true" /> Workspace directory
           </span>
           <h1>Your businesses</h1>
-          <p>
-            Each business has its own pipeline, team, and operating context.
-          </p>
+          <p>Set up distinct CRM spaces for every company you work with.</p>
         </div>
-        <div className={styles.count}>
-          <strong>{businesses.length}</strong>
-          <span>workspaces</span>
+        <div className={styles.headerMeta}>
+          <div className={styles.count} aria-label={`${businesses.length} workspaces`}>
+            <strong>{businesses.length}</strong>
+            <span>{businesses.length === 1 ? "workspace" : "workspaces"}</span>
+          </div>
+          <a className={styles.createLink} href="#workspace-form">
+            <Plus size={15} aria-hidden="true" /> New business
+          </a>
         </div>
       </header>
-      {error && (
-        <p className={styles.error} role="alert">
-          {error}
-        </p>
-      )}
+
+      {error && <p className={styles.error} role="alert">{error}</p>}
+
       <div className={styles.layout}>
-        <section className={styles.listCard} aria-busy={loading}>
+        <section className={styles.listCard} aria-busy={loading} aria-labelledby="workspace-list-title">
           <div className={styles.cardHead}>
             <div>
-              <span className={styles.kicker}>Connected workspaces</span>
-              <h2>Pick a workspace</h2>
+              <span className={styles.kicker}>Your workspaces</span>
+              <h2 id="workspace-list-title">Choose where to work</h2>
             </div>
+            {!loading && businesses.length > 0 && (
+              <span className={styles.listCount}>{businesses.length} total</span>
+            )}
           </div>
+
           <div className={styles.list}>
             {businesses.map((business) => (
               <article className={styles.business} key={business.id}>
-                <button
-                  className={styles.open}
-                  onClick={() => manage(business.id)}
-                >
+                <button className={styles.open} onClick={() => manage(business.id)}>
                   {business.logo_url ? (
                     <img src={business.logo_url} alt="" />
                   ) : (
-                    <span className={styles.logo}>
-                      <Building2 size={17}  aria-hidden="true" />
+                    <span className={styles.logo} aria-hidden="true">
+                      <Building2 size={18} />
                     </span>
                   )}
-                  <div>
+                  <span className={styles.businessDetails}>
                     <strong>{business.name}</strong>
                     <small>{business.industry || "Business workspace"}</small>
-                    {business.description && <p>{business.description}</p>}
-                  </div>
-                  <ArrowRight size={17}  aria-hidden="true" />
+                    {business.description && <em>{business.description}</em>}
+                  </span>
+                  <ArrowRight size={17} aria-hidden="true" />
                 </button>
-                <div className={styles.actions}>
-                  <button
-                    aria-label={`Edit ${business.name}`}
-                    onClick={() => startEdit(business)}
-                  >
-                    <Pencil size={14}  aria-hidden="true" />
+                <div className={styles.actions} aria-label={`${business.name} actions`}>
+                  <button aria-label={`Edit ${business.name}`} onClick={() => startEdit(business)}>
+                    <Pencil size={15} aria-hidden="true" />
                   </button>
-                  <button
-                    aria-label={`Delete ${business.name}`}
-                    onClick={() => remove(business)}
-                  >
-                    <Trash2 size={14}  aria-hidden="true" />
+                  <button aria-label={`Delete ${business.name}`} onClick={() => remove(business)}>
+                    <Trash2 size={15} aria-hidden="true" />
                   </button>
                 </div>
               </article>
             ))}
           </div>
+
           {loading && <p className={styles.empty}>Loading workspaces…</p>}
           {!loading && !businesses.length && (
-            <p className={styles.empty}>
-              No businesses yet. Create your first workspace.
-            </p>
+            <div className={styles.empty}>
+              <span className={styles.emptyIcon}><Building2 size={20} aria-hidden="true" /></span>
+              <strong>Create your first workspace</strong>
+              <p>Businesses keep their leads, settings, and team context separate.</p>
+              <a href="#workspace-form"><Plus size={15} aria-hidden="true" /> Add a business</a>
+            </div>
           )}
         </section>
-        <section className={styles.formCard}>
+
+        <section className={styles.formCard} id="workspace-form" aria-labelledby="workspace-form-title">
           <div className={styles.formTitle}>
             <span className={styles.eyebrow}>
-              {editing ? <Pencil size={14}  aria-hidden="true" /> : <Plus size={14}  aria-hidden="true" />}{" "}
+              {editing ? <Pencil size={14} aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />}
               {editing ? "Workspace settings" : "New workspace"}
             </span>
-            <h2>{editing ? "Edit business details" : "Create a business"}</h2>
-            <p>
-              {editing
-                ? "Keep the profile current for your team and leads."
-                : "Set up the context your CRM will use across the workspace."}
-            </p>
+            <h2 id="workspace-form-title">{editing ? "Edit business details" : "Create a business"}</h2>
+            <p>{editing ? "Update the information your team uses to identify this workspace." : "Start with the essentials. You can refine these details at any time."}</p>
           </div>
+
           <form onSubmit={save} aria-busy={saving}>
             <label>
               Business name
-              <input
-                value={form.name}
-                onChange={(e) => update("name", e.target.value)}
-                placeholder="Acme Inc."
-                required
-              />
+              <input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Acme Inc." autoComplete="organization" required />
             </label>
             <label>
-              Industry
-              <input
-                value={form.industry}
-                onChange={(e) => update("industry", e.target.value)}
-                placeholder="Sports, design, technology…"
-              />
+              Industry <small>Optional</small>
+              <input value={form.industry} onChange={(event) => update("industry", event.target.value)} placeholder="Sports, design, technology…" />
             </label>
+            <div className={styles.fieldGrid}>
+              <label>
+                Website <small>Optional</small>
+                <span className={styles.inputIcon}>
+                  <Globe2 size={15} aria-hidden="true" />
+                  <input type="url" value={form.website} onChange={(event) => update("website", event.target.value)} placeholder="company.com" />
+                </span>
+              </label>
+              <label>
+                Logo URL <small>Optional</small>
+                <span className={styles.inputIcon}>
+                  <ImageIcon size={15} aria-hidden="true" />
+                  <input type="url" value={form.logo_url} onChange={(event) => update("logo_url", event.target.value)} placeholder="logo.png" />
+                </span>
+              </label>
+            </div>
             <label>
-              Website
-              <div className={styles.inputIcon}>
-                <Globe2 size={14}  aria-hidden="true" />
-                <input
-                  type="url"
-                  value={form.website}
-                  onChange={(e) => update("website", e.target.value)}
-                  placeholder="https://company.com"
-                />
-              </div>
-            </label>
-            <label>
-              Logo URL
-              <div className={styles.inputIcon}>
-                <ImageIcon size={14}  aria-hidden="true" />
-                <input
-                  type="url"
-                  value={form.logo_url}
-                  onChange={(e) => update("logo_url", e.target.value)}
-                  placeholder="https://…/logo.png"
-                />
-              </div>
-            </label>
-            <label>
-              About the business
-              <textarea
-                value={form.description}
-                onChange={(e) => update("description", e.target.value)}
-                placeholder="What does this workspace focus on?"
-                rows={4}
-              />
+              About the business <small>Optional</small>
+              <textarea value={form.description} onChange={(event) => update("description", event.target.value)} placeholder="What does this workspace focus on?" rows={4} />
             </label>
             <div className={styles.formActions}>
-              {editing && (
-                <button
-                  type="button"
-                  className={styles.cancel}
-                  onClick={() => {
-                    setEditing(null);
-                    setForm(emptyForm);
-                  }}
-                >
-                  <X size={14}  aria-hidden="true" /> Cancel
-                </button>
-              )}
+              {editing && <button type="button" className={styles.cancel} onClick={cancelEdit}><X size={15} aria-hidden="true" /> Cancel</button>}
               <button className={styles.primary} disabled={saving}>
-                {saving ? (
-                  "Saving…"
-                ) : (
-                  <>
-                    <Check size={14}  aria-hidden="true" />{" "}
-                    {editing ? "Save details" : "Create workspace"}
-                  </>
-                )}
+                {saving ? "Saving…" : <><Check size={15} aria-hidden="true" /> {editing ? "Save changes" : "Create workspace"}</>}
               </button>
             </div>
           </form>
