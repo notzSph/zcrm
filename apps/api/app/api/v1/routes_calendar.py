@@ -7,11 +7,11 @@ router = APIRouter(tags=["calendar"])
 
 
 @router.get("/calendar/caldav")
-def caldav_status(_: RequestContext = Depends(require_context)) -> dict[str, str | bool]:
-    if not configured():
-        return {"enabled": False, "configured": False}
+def caldav_status(context: RequestContext = Depends(require_context)) -> dict[str, str | bool]:
     try:
-        url = calendar_url()
+        if not configured(context.user):
+            return {"enabled": False, "configured": False}
+        url = calendar_url(context.user)
     except CalDAVError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return {"enabled": True, "configured": True, "calendar_url": url}

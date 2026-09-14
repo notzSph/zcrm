@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 from app.caldav import CalDAVError, delete_event, sync_reminder
-from app.domain_models import Activity, ActivityType, ApiIdempotency, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, LeadUpload, Reminder, ReminderKind
+from app.domain_models import Activity, ActivityType, ApiIdempotency, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, LeadUpload, Reminder, ReminderKind, User
 from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate, StatusTransitionCreate, TimelineActor, TimelineItem, TimelinePage, TimelineSource, UploadInitiate, UploadOut
 from app.core.config import settings
 from app.security import RequestContext, get_db, require_context
@@ -173,6 +173,9 @@ def transition_lead_status(lead_id: uuid.UUID, payload: StatusTransitionCreate, 
 UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "/app/uploads")) / "leads"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
+def reminder_calendar_user(db: Session, reminder: Reminder) -> User | None:
+    return db.get(User, reminder.owner_user_id) if reminder.owner_user_id else None
+
 @router.post("/leads/{lead_id}/attachments/initiate", response_model=UploadOut, status_code=201)
 def initiate_attachment_upload(lead_id: uuid.UUID, payload: UploadInitiate, idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"), context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> LeadUpload:
     get_lead_or_404(db, lead_id, context.business.id)
@@ -301,9 +304,9 @@ def delete_lead(lead_id: uuid.UUID, context: RequestContext = Depends(require_co
 
 @router.post("/leads/{lead_id}/reminders", response_model=ReminderOut, status_code=201)
 def create_reminder(lead_id: uuid.UUID, payload: ReminderCreate, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Reminder:
-    lead = get_lead_or_404(db, lead_id, context.business.id); reminder = Reminder(lead_id=lead_id, **payload.model_dump()); db.add(reminder); db.flush()
+    lead = get_lead_or_404(db, lead_id, context.business.id); reminder = Reminder(lead_id=lead_id, owner_user_id=context.user.id if context.user else None, **payload.model_dump()); db.add(reminder); db.flush()
     try:
-        synced = sync_reminder(reminder, lead)
+        synced = sync_reminder(reminder, lead, reminder_calendar_user(db, reminder))
     except CalDAVError as exc:
         db.rollback(); raise HTTPException(status_code=502, detail=str(exc)) from exc
     if synced: reminder.caldav_uid, reminder.caldav_url = synced
@@ -320,7 +323,7 @@ def update_reminder(reminder_id: uuid.UUID, payload: ReminderUpdate, context: Re
     for key, value in changes.items(): setattr(reminder, key, value)
     if payload.completed is not None: reminder.completed_at = datetime.now(UTC) if payload.completed else None
     try:
-        synced = sync_reminder(reminder, reminder.lead)
+        synced = sync_reminder(reminder, reminder.lead, reminder_calendar_user(db, reminder))
     except CalDAVError as exc:
         db.rollback(); raise HTTPException(status_code=502, detail=str(exc)) from exc
     if synced: reminder.caldav_uid, reminder.caldav_url = synced
@@ -331,7 +334,7 @@ def update_reminder(reminder_id: uuid.UUID, payload: ReminderUpdate, context: Re
 def delete_reminder(reminder_id: uuid.UUID, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> None:
     reminder = reminder_for_business(db, reminder_id, context.business.id)
     try:
-        delete_event(reminder)
+        delete_event(reminder, reminder_calendar_user(db, reminder))
     except CalDAVError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     db.delete(reminder); db.commit()
