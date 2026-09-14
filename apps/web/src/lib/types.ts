@@ -64,7 +64,9 @@ export type LeadAttachment = {
   content_type: string;
   size_bytes: number;
   kind: string;
-  created_at: string;
+  status?: string;
+  redacted?: boolean;
+  created_at?: string;
 };
 
 export type Lead = {
@@ -83,6 +85,7 @@ export type Lead = {
   next_action: string | null;
   created_at: string;
   updated_at: string;
+  version: number;
   reminders: Reminder[];
   activities: Activity[];
   interactions: Interaction[];

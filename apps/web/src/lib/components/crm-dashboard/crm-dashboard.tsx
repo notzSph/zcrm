@@ -10,18 +10,15 @@ import {
   BadgeEuro,
   Bell,
   CalendarDays,
-  Check,
   ChevronRight,
   CirclePlus,
   CircleX,
   FileText,
   MessageSquareText,
-  Pencil,
   Plus,
   Radio,
   Send,
   Sprout,
-  Trash2,
   Trophy,
   Target as TargetIcon,
   Users,
@@ -30,14 +27,11 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/select-menu";
+import LeadDrawer from "@/lib/components/lead-drawer/lead-drawer";
 import {
-  ActivityType,
   LeadStatus,
-  type Activity,
   type Lead,
-  type Reminder,
 } from "@/lib/types";
-import { reminderKindOptions } from "@/lib/options";
 import styles from "./crm-dashboard.module.scss";
 
 const stages: {
@@ -63,17 +57,6 @@ const outcomes: LeadStatus[] = [
   LeadStatus.Lost,
   LeadStatus.Nurture,
 ];
-const statusMenuOptions: SelectMenuOption<LeadStatus>[] = [
-  { value: LeadStatus.Target, label: "Target", icon: TargetIcon, tone: "violet" },
-  { value: LeadStatus.Connected, label: "Connected", icon: Radio, tone: "violet" },
-  { value: LeadStatus.Contacted, label: "Contacted", icon: Send, tone: "violet" },
-  { value: LeadStatus.Meeting, label: "Meeting", icon: CalendarDays, tone: "yellow" },
-  { value: LeadStatus.Proposal, label: "Proposal", icon: FileText, tone: "violet" },
-  { value: LeadStatus.Won, label: "Won", icon: Trophy, tone: "green" },
-  { value: LeadStatus.Lost, label: "Lost", icon: CircleX, tone: "red" },
-  { value: LeadStatus.Nurture, label: "Nurture", icon: Sprout, tone: "green" },
-];
-
 function dateLabel(value: string) {
   const date = new Date(value);
   const now = new Date();
@@ -243,7 +226,7 @@ export default function CrmDashboard() {
     });
     if (!response.ok) {
       setError("Could not save changes.");
-      return;
+      throw new Error("Lead update failed");
     }
     await refreshLead(id);
   }
@@ -251,95 +234,22 @@ export default function CrmDashboard() {
   async function moveLead(leadId: string, destination: LeadStatus) {
     const lead = leads.find((item) => item.id === leadId);
     if (!lead || lead.status === destination) return;
-    await updateLead(leadId, { status: destination });
-  }
-
-  async function addReminder(
-    leadId: string,
-    event: FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const due = form.get("due_at") as string;
-    const response = await fetch(`/api/leads/${leadId}/reminders`, {
+    const response = await fetch(`/api/leads/${leadId}/status-transitions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: form.get("title"),
-        kind: form.get("kind") || "follow_up",
-        due_at: new Date(due).toISOString(),
+        status: destination,
+        next_action: lead.next_action,
+        reason: "Moved on Kanban board",
+        expected_version: lead.version,
       }),
     });
     if (!response.ok) {
-      setError("Could not add reminder.");
+      setError(response.status === 409 ? "This lead changed elsewhere. Refresh and try again." : "Could not move this lead.");
+      if (response.status === 409) await refreshLead(leadId);
       return;
     }
-    event.currentTarget.reset();
     await refreshLead(leadId);
-  }
-
-  async function completeReminder(reminder: Reminder) {
-    const response = await fetch(`/api/reminders/${reminder.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed: true }),
-    });
-    if (!response.ok) {
-      setError("Could not complete reminder.");
-      return;
-    }
-    const leadId = leads.find((lead) =>
-      lead.reminders.some((item) => item.id === reminder.id),
-    )?.id;
-    if (leadId) await refreshLead(leadId);
-    else await refresh();
-  }
-
-  async function updateReminder(id: string, updates: Partial<Reminder>) {
-    const response = await fetch(`/api/reminders/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    });
-    if (!response.ok) {
-      setError("Could not update reminder.");
-      return;
-    }
-    const leadId = leads.find((lead) =>
-      lead.reminders.some((item) => item.id === id),
-    )?.id;
-    if (leadId) await refreshLead(leadId);
-    else await refresh();
-  }
-
-  async function deleteReminder(id: string) {
-    if (!window.confirm("Delete this reminder?")) return;
-    const leadId = leads.find((lead) =>
-      lead.reminders.some((item) => item.id === id),
-    )?.id;
-    const response = await fetch(`/api/reminders/${id}`, { method: "DELETE" });
-    if (!response.ok) {
-      setError("Could not delete reminder.");
-      return;
-    }
-    if (leadId) await refreshLead(leadId);
-    else await refresh();
-  }
-
-  async function deleteLead(id: string) {
-    if (
-      !window.confirm(
-        "Delete this lead and its full history? This cannot be undone.",
-      )
-    )
-      return;
-    const response = await fetch(`/api/leads/${id}`, { method: "DELETE" });
-    if (!response.ok) {
-      setError("Could not delete lead.");
-      return;
-    }
-    setSelected(null);
-    await refresh();
   }
 
   const headerClass = `w-100 f-row j-between a-center ${styles.header}`;
@@ -599,14 +509,11 @@ export default function CrmDashboard() {
       )}
       {selected && (
         <LeadDrawer
+          key={selected.id}
           lead={selected}
           onClose={() => setSelected(null)}
           onUpdate={updateLead}
-          onAddReminder={addReminder}
-          onCompleteReminder={completeReminder}
-          onUpdateReminder={updateReminder}
-          onDeleteReminder={deleteReminder}
-          onDeleteLead={deleteLead}
+          onRefresh={refreshLead}
         />
       )}
     </main>
@@ -633,302 +540,6 @@ function Modal({
         </div>
         {children}
       </div>
-    </div>
-  );
-}
-
-function LeadDrawer({
-  lead,
-  onClose,
-  onUpdate,
-  onAddReminder,
-  onCompleteReminder,
-  onUpdateReminder,
-  onDeleteReminder,
-  onDeleteLead,
-}: {
-  lead: Lead;
-  onClose: () => void;
-  onUpdate: (id: string, updates: Partial<Lead>) => Promise<void>;
-  onAddReminder: (
-    leadId: string,
-    event: FormEvent<HTMLFormElement>,
-  ) => Promise<void>;
-  onCompleteReminder: (reminder: Reminder) => Promise<void>;
-  onUpdateReminder: (id: string, updates: Partial<Reminder>) => Promise<void>;
-  onDeleteReminder: (id: string) => Promise<void>;
-  onDeleteLead: (id: string) => Promise<void>;
-}) {
-  const [company, setCompany] = useState(lead.company);
-  const [contactName, setContactName] = useState(lead.contact_name || "");
-  const [contactEmail, setContactEmail] = useState(lead.contact_email || "");
-  const [description, setDescription] = useState(lead.description || "");
-  const [nextAction, setNextAction] = useState(lead.next_action || "");
-  const [status, setStatus] = useState<LeadStatus>(lead.status);
-  const [editingReminderId, setEditingReminderId] = useState<string | null>(
-    null,
-  );
-  useEffect(() => {
-    setCompany(lead.company);
-    setContactName(lead.contact_name || "");
-    setContactEmail(lead.contact_email || "");
-    setDescription(lead.description || "");
-    setNextAction(lead.next_action || "");
-    setStatus(lead.status);
-  }, [lead]);
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await onUpdate(lead.id, {
-      company,
-      contact_name: contactName || null,
-      contact_email: contactEmail || null,
-      description: description || null,
-      next_action: nextAction || null,
-      status,
-    });
-  }
-  async function saveReminder(
-    event: FormEvent<HTMLFormElement>,
-    reminder: Reminder,
-  ) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    await onUpdateReminder(reminder.id, {
-      title: String(form.get("title")),
-      kind: form.get("kind") as Reminder["kind"],
-      due_at: new Date(String(form.get("due_at"))).toISOString(),
-    });
-    setEditingReminderId(null);
-  }
-  return (
-    <div className={styles.drawerWrap}>
-      <button className={styles.scrim} aria-label="Close" onClick={onClose} />
-      <aside className={styles.drawer}>
-        <div className={styles.drawerHead}>
-          <div>
-            <span>Lead record</span>
-            <h2>{lead.company}</h2>
-          </div>
-          <button aria-label="Close lead panel" title="Close" onClick={onClose}>
-            <X size={19} aria-hidden="true" />
-          </button>
-        </div>
-        <Link className={styles.drawerPageLink} href={`/leads/${lead.id}`}>
-          <FileText size={14} /> Open lead page
-        </Link>
-        <div className={styles.drawerDescription}>
-          <span>Description</span>
-          <p>{lead.description || "No description added."}</p>
-        </div>
-        <form className={styles.form} onSubmit={save}>
-          <label>
-            Company
-            <input
-              value={company}
-              onChange={(event) => setCompany(event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Status
-            <SelectMenu
-              label="Lead status"
-              options={statusMenuOptions}
-              value={status}
-              onChange={setStatus}
-            />
-          </label>
-          <label>
-            Contact name
-            <input
-              value={contactName}
-              onChange={(event) => setContactName(event.target.value)}
-            />
-          </label>
-          <label>
-            Contact email
-            <input
-              type="email"
-              value={contactEmail}
-              onChange={(event) => setContactEmail(event.target.value)}
-            />
-          </label>
-          <label>
-            Description
-            <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Useful context for this lead"
-            />
-          </label>
-          <label>
-            Next action
-            <textarea
-              value={nextAction}
-              onChange={(event) => setNextAction(event.target.value)}
-            />
-          </label>
-          <button className={styles.primary}>Save changes</button>
-        </form>
-        <div className={styles.drawerSection}>
-          <div className={styles.sectionTitle}>
-            <h3>Reminders</h3>
-            <span>
-              {lead.reminders.filter((item) => !item.completed_at).length} open
-            </span>
-          </div>
-          {lead.reminders.map((reminder) => (
-            <div className={styles.reminderRow} key={reminder.id}>
-              {editingReminderId === reminder.id ? (
-                <form
-                  className={styles.editReminder}
-                  onSubmit={(event) => saveReminder(event, reminder)}
-                >
-                  <input name="title" defaultValue={reminder.title} required />
-                  <select name="kind" defaultValue={reminder.kind}>
-                    {reminderKindOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    name="due_at"
-                    type="datetime-local"
-                    defaultValue={localDateTime(reminder.due_at)}
-                    required
-                  />
-                  <div>
-                    <button type="submit">Save</button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingReminderId(null)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <>
-                  <button
-                    disabled={Boolean(reminder.completed_at)}
-                    aria-label={reminder.completed_at ? `${reminder.title} completed` : `Complete ${reminder.title}`}
-                    title={reminder.completed_at ? "Completed" : "Complete reminder"}
-                    onClick={() => onCompleteReminder(reminder)}
-                  >
-                    {reminder.completed_at ? <Check size={14} /> : <span />}
-                  </button>
-                  <div>
-                    <strong>{reminder.title}</strong>
-                    <small>
-                      <em className={styles.kindChip}>
-                        {reminder.kind.replace("_", " ")}
-                      </em>
-                      {dateLabel(reminder.due_at)}
-                      {reminder.completed_at ? " · done" : ""}
-                    </small>
-                  </div>
-                  <div className={styles.reminderActions}>
-                    <button
-                      type="button"
-                      aria-label={`Edit ${reminder.title}`}
-                      title="Edit reminder"
-                      onClick={() => setEditingReminderId(reminder.id)}
-                    >
-                      <Pencil size={13} />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Delete ${reminder.title}`}
-                      title="Delete reminder"
-                      onClick={() => onDeleteReminder(reminder.id)}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-          <form
-            className={styles.addReminder}
-            onSubmit={(event) => onAddReminder(lead.id, event)}
-          >
-            <input name="title" placeholder="Follow up…" required />
-            <select name="kind" defaultValue="follow_up">
-              {reminderKindOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <input
-              name="due_at"
-              type="datetime-local"
-              defaultValue={localDateTime()}
-              required
-            />
-            <button aria-label="Add reminder">
-              <Plus size={16} />
-            </button>
-          </form>
-        </div>
-        <ActivityLog activities={lead.activities} />
-        <button
-          className={styles.deleteLead}
-          type="button"
-          onClick={() => onDeleteLead(lead.id)}
-        >
-          <Trash2 size={14} /> Delete lead
-        </button>
-      </aside>
-    </div>
-  );
-}
-
-function ActivityLog({ activities }: { activities: Activity[] }) {
-  const description = (activity: Activity) => {
-    if (activity.event_type === ActivityType.LeadCreated) return "Lead created";
-    if (activity.event_type === ActivityType.StatusChanged)
-      return `Status moved from ${activity.payload.from} to ${activity.payload.to}`;
-    if (activity.event_type === ActivityType.LeadUpdated)
-      return `Updated: ${(activity.payload.fields as string[]).join(", ")}`;
-    if (activity.event_type === ActivityType.ReminderCreated)
-      return `Added ${activity.payload.kind} reminder: ${activity.payload.title}`;
-    if (activity.event_type === ActivityType.ReminderCompleted)
-      return `Completed reminder: ${activity.payload.title}`;
-    if (activity.event_type === ActivityType.ReminderDeleted)
-      return `Deleted reminder: ${activity.payload.title}`;
-    return `Updated reminder: ${activity.payload.title}`;
-  };
-  return (
-    <div className={styles.activitySection}>
-      <div className={styles.sectionTitle}>
-        <h3>Activity</h3>
-        <span>
-          {activities.length} event{activities.length === 1 ? "" : "s"}
-        </span>
-      </div>
-      {activities.length ? (
-        activities.map((activity) => (
-          <div className={styles.activityRow} key={activity.id}>
-            <span />
-            <div>
-              <strong>{description(activity)}</strong>
-              <small>
-                {new Intl.DateTimeFormat("en", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(new Date(activity.created_at))}
-              </small>
-            </div>
-          </div>
-        ))
-      ) : (
-        <p className={styles.noActivity}>
-          History starts with the next change.
-        </p>
-      )}
     </div>
   );
 }
