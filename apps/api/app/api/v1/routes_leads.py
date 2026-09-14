@@ -12,8 +12,8 @@ from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 from app.caldav import CalDAVError, delete_event, sync_reminder
-from app.domain_models import Activity, ActivityType, ApiIdempotency, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, Reminder, ReminderKind
-from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate, StatusTransitionCreate, TimelineActor, TimelineItem, TimelinePage, TimelineSource
+from app.domain_models import Activity, ActivityType, ApiIdempotency, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, LeadUpload, Reminder, ReminderKind
+from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate, StatusTransitionCreate, TimelineActor, TimelineItem, TimelinePage, TimelineSource, UploadInitiate, UploadOut
 from app.core.config import settings
 from app.security import RequestContext, get_db, require_context
 
@@ -172,6 +172,58 @@ def transition_lead_status(lead_id: uuid.UUID, payload: StatusTransitionCreate, 
 
 UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "/app/uploads")) / "leads"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+@router.post("/leads/{lead_id}/attachments/initiate", response_model=UploadOut, status_code=201)
+def initiate_attachment_upload(lead_id: uuid.UUID, payload: UploadInitiate, idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"), context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> LeadUpload:
+    get_lead_or_404(db, lead_id, context.business.id)
+    filename = Path(payload.filename).name
+    if not filename or filename in {".", ".."}: raise HTTPException(status_code=400, detail="Invalid filename")
+    if idempotency_key:
+        existing = db.scalar(select(LeadUpload).join(Lead).where(LeadUpload.lead_id == lead_id, LeadUpload.idempotency_key == idempotency_key, Lead.business_id == context.business.id))
+        if existing: return existing
+    upload = LeadUpload(lead_id=lead_id, filename=filename, content_type=payload.content_type, kind=payload.kind, size_bytes=payload.size_bytes, idempotency_key=idempotency_key, actor_user_id=context.user.id if context.user else None, source="agent" if context.is_agent else "user")
+    db.add(upload); db.commit(); db.refresh(upload)
+    return upload
+
+@router.post("/uploads/{upload_id}/complete", response_model=AttachmentOut, status_code=201)
+async def complete_attachment_upload(upload_id: uuid.UUID, file: UploadFile = File(...), context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> LeadAttachment:
+    upload = db.scalar(select(LeadUpload).join(Lead).where(LeadUpload.id == upload_id, Lead.business_id == context.business.id))
+    if not upload: raise HTTPException(status_code=404, detail="Upload not found")
+    if upload.status == "completed":
+        attachment = db.scalar(select(LeadAttachment).where(LeadAttachment.storage_key == upload.storage_key))
+        if attachment: return attachment
+    if upload.status in {"failed", "aborted"}: raise HTTPException(status_code=409, detail=f"Upload is {upload.status}")
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        upload.status = "failed"; db.commit()
+        raise HTTPException(status_code=413, detail="File exceeds 10 MB limit")
+    if upload.size_bytes is not None and upload.size_bytes != len(content):
+        upload.status = "failed"; db.commit()
+        raise HTTPException(status_code=409, detail="Uploaded size does not match initiated size")
+    if Path(file.filename or upload.filename).name != upload.filename:
+        raise HTTPException(status_code=409, detail="Filename does not match initiated upload")
+    storage_key = f"{uuid.uuid4().hex}_{upload.filename}"
+    directory = UPLOADS_DIR / str(context.business.id)
+    directory.mkdir(parents=True, exist_ok=True)
+    try:
+        (directory / storage_key).write_bytes(content)
+        attachment = LeadAttachment(lead_id=upload.lead_id, filename=upload.filename, storage_key=storage_key, content_type=file.content_type or upload.content_type, size_bytes=len(content), kind=upload.kind, actor_user_id=upload.actor_user_id, source=upload.source)
+        db.add(attachment); db.flush()
+        upload.storage_key = storage_key; upload.size_bytes = len(content); upload.status = "completed"; upload.completed_at = datetime.now(UTC)
+        db.commit(); db.refresh(attachment)
+        return attachment
+    except Exception:
+        db.rollback()
+        upload.status = "failed"
+        db.commit()
+        (directory / storage_key).unlink(missing_ok=True)
+        raise
+
+@router.get("/uploads/{upload_id}", response_model=UploadOut)
+def get_attachment_upload(upload_id: uuid.UUID, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> LeadUpload:
+    upload = db.scalar(select(LeadUpload).join(Lead).where(LeadUpload.id == upload_id, Lead.business_id == context.business.id))
+    if not upload: raise HTTPException(status_code=404, detail="Upload not found")
+    return upload
 
 def attachment_for_business(db: Session, attachment_id: uuid.UUID, business_id: uuid.UUID) -> LeadAttachment:
     attachment = db.scalar(select(LeadAttachment).join(Lead).where(LeadAttachment.id == attachment_id, Lead.business_id == business_id))
