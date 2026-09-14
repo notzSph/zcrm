@@ -52,10 +52,11 @@ function timelineText(item: LeadTimelineItem) {
   return "Lead activity recorded.";
 }
 
-export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerApi }: {
+export default function LeadDrawer({ lead, onClose, onUpdate, onRefresh, api = leadDrawerApi }: {
   lead: Lead;
   onClose: () => void;
   onUpdate: (id: string, updates: Partial<Lead>) => Promise<void>;
+  onRefresh: (id: string) => Promise<void>;
   api?: LeadDrawerApi;
 }) {
   const activeLeadId = useRef(lead.id);
@@ -76,6 +77,7 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
   const [nextAction, setNextAction] = useState(lead.next_action || "");
   const [status, setStatus] = useState(lead.status);
   const [saving, setSaving] = useState(false);
+  const [savingStatus, setSavingStatus] = useState(false);
   const [detailsError, setDetailsError] = useState("");
   const [attachments, setAttachments] = useState<LeadAttachment[]>([]);
   const [filesError, setFilesError] = useState("");
@@ -137,26 +139,37 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
       if (activeLeadId.current === requestedLeadId) setPostError("Could not save this interaction. Your draft is still here.");
     } finally { if (activeLeadId.current === requestedLeadId) setPosting(false); }
   }
+  async function changeStatus(nextStatus: LeadStatus) {
+    if (nextStatus === status || savingStatus) return;
+    const requestedLeadId = lead.id;
+    const previousStatus = status;
+    setStatus(nextStatus); setSavingStatus(true); setDetailsError("");
+    try {
+      await api.transitionStatus(requestedLeadId, {
+        status: nextStatus,
+        next_action: nextAction || null,
+        reason: "Updated from Kanban lead drawer",
+        expected_version: lead.version,
+      });
+      if (activeLeadId.current === requestedLeadId) await onRefresh(requestedLeadId);
+    } catch {
+      if (activeLeadId.current === requestedLeadId) {
+        setStatus(previousStatus);
+        setDetailsError("Could not update the status. Refresh the lead and try again.");
+      }
+    } finally { if (activeLeadId.current === requestedLeadId) setSavingStatus(false); }
+  }
   async function saveDetails(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const requestedLeadId = lead.id;
     setSaving(true); setDetailsError("");
     try {
-      const statusChanged = status !== lead.status;
-      if (statusChanged) {
-        await api.transitionStatus(requestedLeadId, {
-          status,
-          next_action: nextAction || null,
-          reason: "Updated from Kanban lead drawer",
-          expected_version: lead.version,
-        });
-      }
       await onUpdate(requestedLeadId, {
         company,
         contact_name: contactName || null,
         contact_email: contactEmail || null,
         description: description || null,
-        ...(statusChanged ? {} : { next_action: nextAction || null }),
+        next_action: nextAction || null,
       });
     } catch {
       if (activeLeadId.current === requestedLeadId) setDetailsError("Could not save these changes. Refresh the lead and try again.");
@@ -194,7 +207,20 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
   return <div className={styles.drawerWrap} role="presentation">
     <button className={styles.scrim} aria-label="Close lead panel" onClick={onClose} />
     <aside className={styles.drawer} aria-label={`${lead.company} lead drawer`} role="dialog" aria-modal="true">
-      <div className={styles.drawerHead}><div><span>Lead record</span><h2>{lead.company}</h2></div><button aria-label="Close lead panel" title="Close" onClick={onClose}><X size={19} /></button></div>
+      <div className={styles.drawerHead}>
+        <div className={styles.drawerIdentity}>
+          <span>Lead record</span>
+          <div className={styles.drawerLeadRow}>
+            <h2>{lead.company}</h2>
+            <span className={styles.drawerLeadGap} aria-hidden="true" />
+            <div className={styles.drawerStatusCell} aria-busy={savingStatus}>
+              <SelectMenu label="Lead status" options={statusOptions} value={status} onChange={(value) => void changeStatus(value)} compact className={styles.drawerStatusSelect} />
+            </div>
+          </div>
+        </div>
+        <button aria-label="Close lead panel" title="Close" onClick={onClose}><X size={19} /></button>
+      </div>
+      {detailsError && <p className={styles.inlineError} role="alert">{detailsError}</p>}
       <Link className={styles.drawerPageLink} href={`/leads/${lead.id}`}><FileText size={14} /> Open lead page</Link>
       <div className={styles.drawerTabs} role="tablist" aria-label="Lead drawer sections">
         {([ ["activity", "Attività"], ["details", "Dettagli"], ["files", "File"] ] as const).map(([value, label]) => <button key={value} id={`lead-drawer-tab-${value}`} role="tab" aria-controls={`lead-drawer-panel-${value}`} aria-selected={tab === value} className={tab === value ? styles.drawerTabActive : ""} onClick={() => setTab(value)}>{label}</button>)}
@@ -214,7 +240,7 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
         {nextCursor && <button className={styles.loadMore} disabled={loadingTimeline} onClick={() => void loadTimeline(nextCursor, true)}>Load earlier activity</button>}
       </section>}
       {tab === "details" && <form className={`${styles.form} ${styles.drawerTabPanel}`} id="lead-drawer-panel-details" onSubmit={saveDetails} role="tabpanel" aria-labelledby="lead-drawer-tab-details">
-        <label>Company<input value={company} onChange={(event) => setCompany(event.target.value)} required /></label><label>Status<SelectMenu label="Lead status" options={statusOptions} value={status} onChange={setStatus} /></label><label>Contact name<input value={contactName} onChange={(event) => setContactName(event.target.value)} /></label><label>Contact email<input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} /></label><label>Description<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label><label>Next action<textarea value={nextAction} onChange={(event) => setNextAction(event.target.value)} /></label>{detailsError && <p className={styles.inlineError} role="alert">{detailsError}</p>}<button className={styles.primary} disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
+        <label>Company<input value={company} onChange={(event) => setCompany(event.target.value)} required /></label><label>Contact name<input value={contactName} onChange={(event) => setContactName(event.target.value)} /></label><label>Contact email<input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} /></label><label>Description<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label><label>Next action<textarea value={nextAction} onChange={(event) => setNextAction(event.target.value)} /></label><button className={styles.primary} disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
       </form>}
       {tab === "files" && <section className={styles.drawerTabPanel} id="lead-drawer-panel-files" role="tabpanel" aria-labelledby="lead-drawer-tab-files">
         <label className={styles.uploadDrop}><Upload size={18} /><span>Add files</span><small>Up to 10 MB per file</small><input type="file" multiple onChange={(event) => { addFiles(event.target.files); event.currentTarget.value = ""; }} /></label>

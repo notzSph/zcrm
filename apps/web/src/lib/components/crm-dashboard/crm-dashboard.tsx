@@ -513,6 +513,7 @@ export default function CrmDashboard() {
           lead={selected}
           onClose={() => setSelected(null)}
           onUpdate={updateLead}
+          onRefresh={refreshLead}
         />
       )}
     </main>
