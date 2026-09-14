@@ -195,7 +195,10 @@ async def complete_attachment_upload(upload_id: uuid.UUID, file: UploadFile = Fi
     if upload.status == "completed":
         attachment = db.scalar(select(LeadAttachment).where(LeadAttachment.storage_key == upload.storage_key))
         if attachment: return attachment
-    if upload.status in {"failed", "aborted"}: raise HTTPException(status_code=409, detail=f"Upload is {upload.status}")
+    if upload.status == "aborted": raise HTTPException(status_code=409, detail="Upload is aborted")
+    if upload.status == "failed":
+        upload.status = "initiated"
+        db.commit()
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
         upload.status = "failed"; db.commit()
