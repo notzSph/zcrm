@@ -2,7 +2,7 @@
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0015_status_transitions_and_redaction"
+revision = "0015_status_redaction"
 down_revision = "0014_api_idempotency"
 branch_labels = None
 depends_on = None

@@ -3,7 +3,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "0016_two_phase_uploads"
-down_revision = "0015_status_transitions_and_redaction"
+down_revision = "0015_status_redaction"
 branch_labels = None
 depends_on = None
 
