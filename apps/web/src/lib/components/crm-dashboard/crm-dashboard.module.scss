@@ -686,3 +686,45 @@
 @media (min-width: 1600px) { .dashboardTop { grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(22rem, 2fr); } .dashboardTop .reminderStrip { grid-column: auto; } }
 @media (max-width: 1150px) { .dashboardTop { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .metricCard { padding: 1rem; } .metricCard > span { font-size: .75rem; } .headerActions { width: 100%; } .headerActions .primary { width: 100%; } }
+
+/* Persistent Kanban drawer */
+.drawerTabs { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 -1.5rem 1.25rem; padding: 0 1.5rem; border-bottom: 1px solid $zLine; }
+.drawerTabs button { min-height: 2.75rem; color: $zTextMuted; background: transparent; border-bottom: 2px solid transparent; font-size: .875rem; font-weight: 800; }
+.drawerTabs button:hover { color: $zText; }
+.drawerTabs .drawerTabActive { color: $zLavender; border-bottom-color: $zViolet; }
+.drawerTabPanel { min-height: 20rem; }
+.interactionComposer { display: grid; gap: .75rem; padding: 1rem; margin-bottom: 1.25rem; border: 1px solid $zLine; border-radius: .75rem; background: rgba($zBg2, .55); }
+.interactionComposer > div:first-child { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: .5rem; color: $zTextMuted; font-size: .8125rem; font-weight: 700; }
+.interactionComposer select, .interactionComposer textarea { width: 100%; color: $zText; background: $zBg1; border: 1px solid $zLine; border-radius: .5rem; font: inherit; }
+.interactionComposer select { min-height: 2.5rem; padding: .45rem .6rem; }
+.interactionComposer label { display: grid; gap: .4rem; color: $zTextMuted; font-size: .8125rem; font-weight: 700; }
+.interactionComposer textarea { min-height: 5.5rem; padding: .7rem; resize: vertical; }
+.composerActions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.composerActions small { color: $zTextMuted; font-size: .75rem; }
+.composerActions .primary { min-height: 2.5rem; }
+.timelineHead { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 .5rem; }
+.timelineHead h3 { color: $zText; font-size: 1rem; }
+.timelineHead button, .loadMore, .inlineError button { color: $zLavender; background: transparent; font-size: .8125rem; font-weight: 700; text-decoration: underline; }
+.timelineEntry { display: flex; gap: .75rem; padding: .85rem 0; border-bottom: 1px solid rgba($zLine, .7); }
+.timelineEntry > span { width: .55rem; height: .55rem; flex: 0 0 auto; margin-top: .4rem; border-radius: 50%; background: $zLavender; box-shadow: 0 0 0 3px rgba($zViolet, .13); }
+.timelineEntry > span[data-kind="interaction"] { background: $zCyan; }
+.timelineEntry > span[data-kind="reminder"] { background: $zOrange; }
+.timelineEntry > div { min-width: 0; display: grid; gap: .2rem; }
+.timelineEntry strong { color: $zTextSoft; font-size: .875rem; overflow-wrap: anywhere; }
+.timelineEntry p { color: $zTextMuted; font-size: .875rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.timelineEntry small, .fileRow small, .uploadRow small { color: $zTextMuted; font-size: .75rem; }
+.loadMore { display: block; width: 100%; min-height: 2.75rem; margin-top: .75rem; border: 1px solid $zLine; border-radius: .5rem; text-decoration: none; }
+.inlineError { color: $zPink; font-size: .8125rem; line-height: 1.4; }
+.uploadDrop { display: grid; place-items: center; gap: .35rem; min-height: 8.5rem; padding: 1rem; color: $zLavender; border: 1px dashed rgba($zLavender, .6); border-radius: .75rem; background: rgba($zViolet, .06); cursor: pointer; text-align: center; }
+.uploadDrop span { font-weight: 800; }
+.uploadDrop small { color: $zTextMuted; font-size: .75rem; }
+.uploadDrop input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.uploadRow, .fileRow { display: flex; align-items: flex-start; gap: .65rem; padding: .85rem 0; border-bottom: 1px solid rgba($zLine, .7); }
+.uploadRow > div, .fileRow > div { display: grid; min-width: 0; flex: 1; gap: .2rem; }
+.uploadRow strong, .fileRow a { color: $zTextSoft; font-size: .875rem; overflow-wrap: anywhere; }
+.fileRow a:hover { color: $zLavender; text-decoration: underline; }
+.fileRow > button { display: grid; place-items: center; min-width: 2.25rem; min-height: 2.25rem; color: $zTextMuted; background: transparent; border: 1px solid $zLine; border-radius: .5rem; }
+.fileRow > button:hover { color: $zPink; border-color: rgba($zPink, .5); }
+.uploadRow progress { width: 100%; height: .35rem; accent-color: $zViolet; }
+.spin { animation: drawerSpin 1s linear infinite; }
+@keyframes drawerSpin { to { transform: rotate(360deg); } }
