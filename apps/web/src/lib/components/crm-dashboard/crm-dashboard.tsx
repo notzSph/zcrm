@@ -226,7 +226,7 @@ export default function CrmDashboard() {
     });
     if (!response.ok) {
       setError("Could not save changes.");
-      return;
+      throw new Error("Lead update failed");
     }
     await refreshLead(id);
   }
@@ -234,7 +234,22 @@ export default function CrmDashboard() {
   async function moveLead(leadId: string, destination: LeadStatus) {
     const lead = leads.find((item) => item.id === leadId);
     if (!lead || lead.status === destination) return;
-    await updateLead(leadId, { status: destination });
+    const response = await fetch(`/api/leads/${leadId}/status-transitions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: destination,
+        next_action: lead.next_action,
+        reason: "Moved on Kanban board",
+        expected_version: lead.version,
+      }),
+    });
+    if (!response.ok) {
+      setError(response.status === 409 ? "This lead changed elsewhere. Refresh and try again." : "Could not move this lead.");
+      if (response.status === 409) await refreshLead(leadId);
+      return;
+    }
+    await refreshLead(leadId);
   }
 
   const headerClass = `w-100 f-row j-between a-center ${styles.header}`;

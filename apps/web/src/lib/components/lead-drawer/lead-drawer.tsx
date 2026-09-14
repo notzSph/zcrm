@@ -11,8 +11,8 @@ import styles from "@/lib/components/crm-dashboard/crm-dashboard.module.scss";
 const draftKey = (id: string) => `zcrm:lead-drawer:draft:${id}`;
 type Tab = "activity" | "details" | "files";
 type Draft = { body: string; interactionType: string; idempotencyKey: string };
-type UploadPhase = "initiating" | "uploading" | "completing" | "complete" | "error";
-type UploadItem = { id: string; file: File; progress: number; phase: UploadPhase; attachmentId?: string; error?: string };
+type UploadPhase = "uploading" | "complete" | "error";
+type UploadItem = { id: string; file: File; progress: number; phase: UploadPhase; error?: string };
 
 const statusOptions: SelectMenuOption<LeadStatus>[] = Object.values(LeadStatus).map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) }));
 const interactionTypes = ["reply", "message", "call", "meeting", "proposal_sent", "note", "other"] as const;
@@ -32,15 +32,24 @@ function getDraft(leadId: string): Draft {
   } catch { return emptyDraft(); }
 }
 function formatDate(value: string) { return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); }
-function actorLabel(item: LeadTimelineItem) { return item.actor?.name ?? "System"; }
+function actorLabel(item: LeadTimelineItem) { return item.actor.label ?? (item.actor.type === "user" ? "User" : "System"); }
+function timelineTitle(item: LeadTimelineItem) {
+  if (item.kind === "interaction") return item.payload.interaction_type.replaceAll("_", " ");
+  if (item.kind === "attachment") return item.payload.kind.replaceAll("_", " ");
+  return (item.payload.event_type ?? "activity").replaceAll("_", " ");
+}
 function timelineText(item: LeadTimelineItem) {
   if (item.redacted) return "This timeline item is redacted.";
-  switch (item.payload.type) {
-    case "interaction": return item.payload.body;
-    case "attachment": return `${item.payload.filename} (${Math.ceil(item.payload.size_bytes / 1024)} KB)`;
-    case "status_change": return `${item.payload.from_status ?? "Unspecified"} → ${item.payload.to_status}`;
-    case "note": return item.payload.body;
+  if (item.kind === "interaction") return item.payload.body || "Interaction recorded.";
+  if (item.kind === "attachment") {
+    if (!item.payload.filename) return "Attachment updated.";
+    const size = item.payload.size_bytes == null ? "" : ` (${Math.ceil(item.payload.size_bytes / 1024)} KB)`;
+    return `${item.payload.filename}${size}`;
   }
+  if (item.payload.from && item.payload.to) return `${item.payload.from} → ${item.payload.to}`;
+  if (item.payload.title) return item.payload.title;
+  if (item.payload.fields?.length) return `Updated: ${item.payload.fields.join(", ")}`;
+  return "Lead activity recorded.";
 }
 
 export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerApi }: {
@@ -67,6 +76,7 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
   const [nextAction, setNextAction] = useState(lead.next_action || "");
   const [status, setStatus] = useState(lead.status);
   const [saving, setSaving] = useState(false);
+  const [detailsError, setDetailsError] = useState("");
   const [attachments, setAttachments] = useState<LeadAttachment[]>([]);
   const [filesError, setFilesError] = useState("");
   const [loadingFiles, setLoadingFiles] = useState(false);
@@ -95,7 +105,7 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
   }
 
   useEffect(() => {
-    setTab("activity"); setTimeline([]); setNextCursor(null); setTimelineError(""); setPostError("");
+    setTab("activity"); setTimeline([]); setNextCursor(null); setTimelineError(""); setPostError(""); setDetailsError("");
     setDraft(getDraft(lead.id));
     setCompany(lead.company); setContactName(lead.contact_name || ""); setContactEmail(lead.contact_email || "");
     setDescription(lead.description || ""); setNextAction(lead.next_action || ""); setStatus(lead.status);
@@ -128,14 +138,34 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
     } finally { if (activeLeadId.current === requestedLeadId) setPosting(false); }
   }
   async function saveDetails(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const requestedLeadId = lead.id; setSaving(true);
-    try { await onUpdate(requestedLeadId, { company, contact_name: contactName || null, contact_email: contactEmail || null, description: description || null, next_action: nextAction || null, status }); }
-    finally { if (activeLeadId.current === requestedLeadId) setSaving(false); }
+    event.preventDefault();
+    const requestedLeadId = lead.id;
+    setSaving(true); setDetailsError("");
+    try {
+      const statusChanged = status !== lead.status;
+      if (statusChanged) {
+        await api.transitionStatus(requestedLeadId, {
+          status,
+          next_action: nextAction || null,
+          reason: "Updated from Kanban lead drawer",
+          expected_version: lead.version,
+        });
+      }
+      await onUpdate(requestedLeadId, {
+        company,
+        contact_name: contactName || null,
+        contact_email: contactEmail || null,
+        description: description || null,
+        ...(statusChanged ? {} : { next_action: nextAction || null }),
+      });
+    } catch {
+      if (activeLeadId.current === requestedLeadId) setDetailsError("Could not save these changes. Refresh the lead and try again.");
+    } finally { if (activeLeadId.current === requestedLeadId) setSaving(false); }
   }
   function addFiles(files: FileList | null) {
     if (!files) return;
     Array.from(files).forEach((file) => {
-      const item: UploadItem = { id: `${file.name}-${file.lastModified}-${Math.random()}`, file, progress: 0, phase: "initiating" };
+      const item: UploadItem = { id: `${file.name}-${file.lastModified}-${Math.random()}`, file, progress: 0, phase: "uploading" };
       setUploads((current) => [...current, item]);
       void upload(item, lead.id);
     });
@@ -143,23 +173,13 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
   async function upload(item: UploadItem, requestedLeadId = lead.id) {
     if (item.phase === "complete" || uploadingIds.current.has(item.id)) return;
     uploadingIds.current.add(item.id);
-    setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, error: undefined, phase: entry.attachmentId ? "completing" : "initiating" } : entry));
+    setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, error: undefined, phase: "uploading" } : entry));
     try {
-      let attachmentId = item.attachmentId;
-      if (!attachmentId) {
-        const initiated = await api.initiateAttachment(requestedLeadId, { filename: item.file.name, content_type: item.file.type || null, size_bytes: item.file.size, kind: "document" });
-        attachmentId = initiated.attachment_id;
-        if (activeLeadId.current !== requestedLeadId) return;
-        setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, attachmentId, phase: "uploading" } : entry));
-        await api.uploadAttachment(initiated, item.file, (progress) => {
-          if (activeLeadId.current === requestedLeadId) setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, progress } : entry));
-        });
-      }
+      const attachment = await api.uploadAttachment(requestedLeadId, item.file, "document", (progress) => {
+        if (activeLeadId.current === requestedLeadId) setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, progress } : entry));
+      });
       if (activeLeadId.current !== requestedLeadId) return;
-      setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, attachmentId, progress: 100, phase: "completing" } : entry));
-      const attachment = await api.completeAttachment(attachmentId);
-      if (activeLeadId.current !== requestedLeadId) return;
-      setAttachments((current) => [attachment, ...current]);
+      setAttachments((current) => current.some((entry) => entry.id === attachment.id) ? current : [attachment, ...current]);
       setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, progress: 100, phase: "complete" } : entry));
     } catch {
       if (activeLeadId.current === requestedLeadId) setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, phase: "error", error: "Upload failed. Retry when ready." } : entry));
@@ -189,17 +209,17 @@ export default function LeadDrawer({ lead, onClose, onUpdate, api = leadDrawerAp
         <div className={styles.timelineHead}><h3>Timeline</h3><button onClick={() => void loadTimeline()} disabled={loadingTimeline}>Refresh</button></div>
         {timelineError && <div className={styles.inlineError} role="alert">{timelineError} <button onClick={() => void loadTimeline()}>Retry</button></div>}
         {loadingTimeline && !timeline.length && <p className={styles.noActivity}>Loading activity…</p>}
-        {timeline.map((item) => <article className={styles.timelineEntry} key={item.id}><span data-kind={item.kind} /><div><strong>{item.kind.replace("_", " ")}</strong><p>{timelineText(item)}</p><small>{actorLabel(item)} · {formatDate(item.occurred_at)}</small></div></article>)}
+        {timeline.map((item) => <article className={styles.timelineEntry} key={item.id}><span data-kind={item.kind} /><div><strong>{timelineTitle(item)}</strong><p>{timelineText(item)}</p><small>{actorLabel(item)} · {formatDate(item.occurred_at ?? item.recorded_at)}</small></div></article>)}
         {!loadingTimeline && !timelineError && !timeline.length && <p className={styles.noActivity}>No activity yet.</p>}
         {nextCursor && <button className={styles.loadMore} disabled={loadingTimeline} onClick={() => void loadTimeline(nextCursor, true)}>Load earlier activity</button>}
       </section>}
       {tab === "details" && <form className={`${styles.form} ${styles.drawerTabPanel}`} id="lead-drawer-panel-details" onSubmit={saveDetails} role="tabpanel" aria-labelledby="lead-drawer-tab-details">
-        <label>Company<input value={company} onChange={(event) => setCompany(event.target.value)} required /></label><label>Status<SelectMenu label="Lead status" options={statusOptions} value={status} onChange={setStatus} /></label><label>Contact name<input value={contactName} onChange={(event) => setContactName(event.target.value)} /></label><label>Contact email<input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} /></label><label>Description<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label><label>Next action<textarea value={nextAction} onChange={(event) => setNextAction(event.target.value)} /></label><button className={styles.primary} disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
+        <label>Company<input value={company} onChange={(event) => setCompany(event.target.value)} required /></label><label>Status<SelectMenu label="Lead status" options={statusOptions} value={status} onChange={setStatus} /></label><label>Contact name<input value={contactName} onChange={(event) => setContactName(event.target.value)} /></label><label>Contact email<input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} /></label><label>Description<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label><label>Next action<textarea value={nextAction} onChange={(event) => setNextAction(event.target.value)} /></label>{detailsError && <p className={styles.inlineError} role="alert">{detailsError}</p>}<button className={styles.primary} disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
       </form>}
       {tab === "files" && <section className={styles.drawerTabPanel} id="lead-drawer-panel-files" role="tabpanel" aria-labelledby="lead-drawer-tab-files">
         <label className={styles.uploadDrop}><Upload size={18} /><span>Add files</span><small>Up to 10 MB per file</small><input type="file" multiple onChange={(event) => { addFiles(event.target.files); event.currentTarget.value = ""; }} /></label>
         {filesError && <div className={styles.inlineError} role="alert">{filesError} <button onClick={() => void loadFiles()}>Retry</button></div>}{loadingFiles && <p className={styles.noActivity}>Loading files…</p>}
-        {uploads.map((item) => <div className={styles.uploadRow} key={item.id}><Paperclip size={15} /><div><strong>{item.file.name}</strong>{item.error ? <small className={styles.inlineError}>{item.error} <button onClick={() => void upload(item)}>Retry</button></small> : <small>{item.phase === "complete" ? "Uploaded" : item.phase === "completing" ? "Finalizing…" : `${item.progress}% uploaded`}</small>}<progress value={item.progress} max="100" /></div></div>)}
+        {uploads.map((item) => <div className={styles.uploadRow} key={item.id}><Paperclip size={15} /><div><strong>{item.file.name}</strong>{item.error ? <small className={styles.inlineError}>{item.error} <button onClick={() => void upload(item)}>Retry</button></small> : <small>{item.phase === "complete" ? "Uploaded" : `${item.progress}% uploaded`}</small>}<progress value={item.progress} max="100" /></div></div>)}
         {attachments.map((attachment) => <div className={styles.fileRow} key={attachment.id}><Paperclip size={15} /><div><a href={`/api/attachments/${attachment.id}/download`}>{attachment.filename}</a><small>{Math.ceil(attachment.size_bytes / 1024)} KB · {attachment.kind}</small></div><button aria-label={`Delete ${attachment.filename}`} onClick={() => void removeFile(attachment)}><Trash2 size={15} /></button></div>)}
         {!loadingFiles && !filesError && !attachments.length && !uploads.length && <p className={styles.noActivity}>No files attached.</p>}
       </section>}

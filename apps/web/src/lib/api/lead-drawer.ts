@@ -1,31 +1,58 @@
-import type { Interaction, LeadAttachment } from "@/lib/types";
+import type { Interaction, Lead, LeadAttachment, LeadStatus } from "@/lib/types";
 
-export type TimelineActor = { id: string; name: string } | null;
-export type TimelinePayload =
-  | { type: "interaction"; interaction_type: string; body: string; external_ref: string | null }
-  | { type: "attachment"; attachment_id: string; filename: string; size_bytes: number; content_type: string | null; kind: string }
-  | { type: "status_change"; from_status: string | null; to_status: string }
-  | { type: "note"; body: string };
+export type TimelineActor = {
+  type: string;
+  id: string | null;
+  label: string | null;
+};
 
-/** The server is authoritative: preserve the supplied items and their order. */
+export type TimelineSource = {
+  type: string;
+  label: string | null;
+};
+
+type InteractionTimelinePayload = {
+  interaction_type: string;
+  body: string | null;
+  external_ref: string | null;
+};
+
+type AttachmentTimelinePayload = {
+  filename: string | null;
+  content_type: string | null;
+  size_bytes: number | null;
+  kind: string;
+  status: string;
+};
+
+type ActivityTimelinePayload = {
+  event_type?: string;
+  from?: string;
+  to?: string;
+  title?: string;
+  fields?: string[];
+  [key: string]: unknown;
+};
+
 type TimelineItemBase = {
   id: string;
-  occurred_at: string;
+  schema_version: number;
+  occurred_at: string | null;
+  recorded_at: string;
   actor: TimelineActor;
-  source: string;
+  source: TimelineSource;
   revision: number;
   redacted: boolean;
 };
+
 export type LeadTimelineItem = TimelineItemBase & (
-  | { kind: "interaction"; payload: Extract<TimelinePayload, { type: "interaction" }> }
-  | { kind: "attachment"; payload: Extract<TimelinePayload, { type: "attachment" }> }
-  | { kind: "status_change"; payload: Extract<TimelinePayload, { type: "status_change" }> }
-  | { kind: "note"; payload: Extract<TimelinePayload, { type: "note" }> }
+  | { kind: "interaction"; payload: InteractionTimelinePayload }
+  | { kind: "attachment"; payload: AttachmentTimelinePayload }
+  | { kind: "activity"; payload: ActivityTimelinePayload }
 );
 
+/** The cursor carries the server snapshot; the client preserves item order verbatim. */
 export type LeadTimelinePage = {
-  schema_version: string;
-  snapshot_seq: number;
   items: LeadTimelineItem[];
   next_cursor: string | null;
 };
@@ -35,25 +62,20 @@ export type CreateInteractionInput = Pick<
   "interaction_type" | "body" | "occurred_at" | "external_ref"
 >;
 
-export type UploadProgress = (percent: number) => void;
-export type AttachmentInitiateInput = {
-  filename: string;
-  content_type: string | null;
-  size_bytes: number;
-  kind: string;
-};
-export type AttachmentInitiation = {
-  attachment_id: string;
-  upload: { url: string; method?: "PUT" | "POST"; headers?: Record<string, string> };
+export type StatusTransitionInput = {
+  status: LeadStatus;
+  next_action: string | null;
+  reason: string | null;
+  expected_version: number;
 };
 
+export type UploadProgress = (percent: number) => void;
 export type LeadDrawerApi = {
   getTimeline(leadId: string, cursor?: string | null): Promise<LeadTimelinePage>;
   createInteraction(leadId: string, input: CreateInteractionInput, idempotencyKey: string): Promise<Interaction>;
+  transitionStatus(leadId: string, input: StatusTransitionInput): Promise<Lead>;
   listAttachments(leadId: string): Promise<LeadAttachment[]>;
-  initiateAttachment(leadId: string, input: AttachmentInitiateInput): Promise<AttachmentInitiation>;
-  uploadAttachment(initiation: AttachmentInitiation, file: File, onProgress: UploadProgress): Promise<void>;
-  completeAttachment(attachmentId: string): Promise<LeadAttachment>;
+  uploadAttachment(leadId: string, file: File, kind: string, onProgress: UploadProgress): Promise<LeadAttachment>;
   deleteAttachment(attachmentId: string): Promise<void>;
 };
 
@@ -68,16 +90,19 @@ async function responseJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function xhrUpload(initiation: AttachmentInitiation, file: File, onProgress: UploadProgress) {
-  return new Promise<void>((resolve, reject) => {
+function xhrUpload(leadId: string, file: File, kind: string, onProgress: UploadProgress) {
+  return new Promise<LeadAttachment>((resolve, reject) => {
     const request = new XMLHttpRequest();
-    request.open(initiation.upload.method ?? "PUT", initiation.upload.url);
-    Object.entries(initiation.upload.headers ?? {}).forEach(([name, value]) => request.setRequestHeader(name, value));
+    const form = new FormData();
+    form.append("file", file);
+    form.append("kind", kind);
+    request.open("POST", `/api/leads/${leadId}/attachments`);
+    request.responseType = "json";
     request.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
     });
     request.addEventListener("load", () => {
-      if (request.status >= 200 && request.status < 300) resolve();
+      if (request.status >= 200 && request.status < 300) resolve(request.response as LeadAttachment);
       else {
         const error = new Error("Upload failed.") as ApiError;
         error.status = request.status;
@@ -85,7 +110,7 @@ function xhrUpload(initiation: AttachmentInitiation, file: File, onProgress: Upl
       }
     });
     request.addEventListener("error", () => reject(new Error("Upload failed. Check your connection and retry.")));
-    request.send(file);
+    request.send(form);
   });
 }
 
@@ -101,22 +126,17 @@ export const leadDrawerApi: LeadDrawerApi = {
       body: JSON.stringify(input),
     }));
   },
-  async listAttachments(leadId) {
-    return responseJson<LeadAttachment[]>(await fetch(`/api/leads/${leadId}/attachments`, { cache: "no-store" }));
-  },
-  async initiateAttachment(leadId, input) {
-    // Assumption: the documented frontend contract reserves the attachment and returns a signed upload target here.
-    return responseJson<AttachmentInitiation>(await fetch(`/api/leads/${leadId}/attachments/initiate`, {
+  async transitionStatus(leadId, input) {
+    return responseJson<Lead>(await fetch(`/api/leads/${leadId}/status-transitions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     }));
   },
-  uploadAttachment: xhrUpload,
-  async completeAttachment(attachmentId) {
-    // Assumption: completion is a typed POST and returns the finalized attachment record.
-    return responseJson<LeadAttachment>(await fetch(`/api/attachments/${attachmentId}/complete`, { method: "POST" }));
+  async listAttachments(leadId) {
+    return responseJson<LeadAttachment[]>(await fetch(`/api/leads/${leadId}/attachments`, { cache: "no-store" }));
   },
+  uploadAttachment: xhrUpload,
   async deleteAttachment(attachmentId) {
     const response = await fetch(`/api/attachments/${attachmentId}`, { method: "DELETE" });
     if (!response.ok) throw new Error("Could not delete the file.");

@@ -884,8 +884,8 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
                 </strong>
                 <small>
                   {attachment.kind} ·{" "}
-                  {(attachment.size_bytes / 1024).toFixed(1)} KB ·{" "}
-                  {fullDate(attachment.created_at)}
+                  {(attachment.size_bytes / 1024).toFixed(1)} KB
+                  {attachment.created_at ? ` · ${fullDate(attachment.created_at)}` : ""}
                 </small>
               </div>
               <div className={styles.reminderControls}>
