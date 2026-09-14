@@ -182,6 +182,13 @@ class LeadUpdate(BaseModel):
     next_action: str | None = None
 
 
+class StatusTransitionCreate(BaseModel):
+    status: LeadStatus
+    next_action: str | None = None
+    reason: str | None = Field(default=None, max_length=500)
+    expected_version: int = Field(default=1, ge=1)
+
+
 class LeadOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
@@ -199,6 +206,7 @@ class LeadOut(BaseModel):
     next_action: str | None
     created_at: datetime
     updated_at: datetime
+    version: int
     reminders: list[ReminderOut] = []
     activities: list[ActivityOut] = []
     interactions: list["InteractionOut"] = []
@@ -265,6 +273,8 @@ class AttachmentOut(BaseModel):
     content_type: str
     size_bytes: int
     kind: str
+    status: str
+    redacted: bool
 
 
 class AttachmentUpdate(BaseModel):

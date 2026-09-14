@@ -13,13 +13,23 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 from app.caldav import CalDAVError, delete_event, sync_reminder
 from app.domain_models import Activity, ActivityType, ApiIdempotency, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, Reminder, ReminderKind
-from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate, TimelineActor, TimelineItem, TimelinePage, TimelineSource
+from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate, StatusTransitionCreate, TimelineActor, TimelineItem, TimelinePage, TimelineSource
 from app.core.config import settings
 from app.security import RequestContext, get_db, require_context
 
 router = APIRouter(tags=["crm"])
 
 TIMELINE_SCHEMA_VERSION = 1
+ALLOWED_STATUS_TRANSITIONS = {
+    LeadStatus.target: {LeadStatus.connected, LeadStatus.contacted, LeadStatus.nurture, LeadStatus.lost},
+    LeadStatus.connected: {LeadStatus.contacted, LeadStatus.meeting, LeadStatus.nurture, LeadStatus.lost},
+    LeadStatus.contacted: {LeadStatus.meeting, LeadStatus.proposal, LeadStatus.nurture, LeadStatus.lost},
+    LeadStatus.meeting: {LeadStatus.proposal, LeadStatus.won, LeadStatus.lost, LeadStatus.nurture},
+    LeadStatus.proposal: {LeadStatus.won, LeadStatus.lost, LeadStatus.nurture},
+    LeadStatus.won: {LeadStatus.nurture},
+    LeadStatus.lost: {LeadStatus.target, LeadStatus.nurture},
+    LeadStatus.nurture: {LeadStatus.target, LeadStatus.connected, LeadStatus.contacted, LeadStatus.meeting, LeadStatus.lost},
+}
 
 def _sign_cursor(payload: dict) -> str:
     encoded = base64.urlsafe_b64encode(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).decode().rstrip("=")
@@ -144,6 +154,22 @@ def lead_timeline(
         next_cursor = _sign_cursor({**base, "snapshot_seq": snapshot_seq, "occurred_at": last.occurred_at.isoformat() if last.occurred_at else None, "id": str(last.id)})
     return TimelinePage(items=page, next_cursor=next_cursor)
 
+@router.post("/leads/{lead_id}/status-transitions", response_model=LeadOut)
+def transition_lead_status(lead_id: uuid.UUID, payload: StatusTransitionCreate, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Lead:
+    lead = get_lead_or_404(db, lead_id, context.business.id)
+    if payload.expected_version != lead.version:
+        raise HTTPException(status_code=409, detail="Lead version is stale")
+    if payload.status != lead.status and payload.status not in ALLOWED_STATUS_TRANSITIONS[lead.status]:
+        raise HTTPException(status_code=422, detail=f"Invalid transition from {lead.status.value} to {payload.status.value}")
+    old_status = lead.status
+    lead.status = payload.status
+    if payload.next_action is not None:
+        lead.next_action = payload.next_action
+    lead.version += 1
+    db.add(Activity(lead_id=lead.id, actor_user_id=context.user.id if context.user else None, source="agent" if context.is_agent else "user", event_type=ActivityType.status_changed, payload={"from": old_status.value, "to": lead.status.value, "reason": payload.reason, "version": lead.version}))
+    db.commit()
+    return get_lead_or_404(db, lead.id, context.business.id)
+
 UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "/app/uploads")) / "leads"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
@@ -196,13 +222,17 @@ def delete_attachment(attachment_id: uuid.UUID, context: RequestContext = Depend
     attachment = attachment_for_business(db, attachment_id, context.business.id)
     path = UPLOADS_DIR / str(context.business.id) / attachment.storage_key
     if path.is_file(): path.unlink()
-    db.delete(attachment); db.commit()
+    attachment.redacted = True
+    attachment.status = "redacted"
+    attachment.revision += 1
+    db.commit()
 
 @router.patch("/leads/{lead_id}", response_model=LeadOut)
 def update_lead(lead_id: uuid.UUID, payload: LeadUpdate, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Lead:
     lead = get_lead_or_404(db, lead_id, context.business.id); changes = payload.model_dump(exclude_unset=True); changed = [k for k, v in changes.items() if getattr(lead, k) != v]; old_status = lead.status
     for key, value in changes.items(): setattr(lead, key, value)
-    if "status" in changed: db.add(Activity(lead_id=lead.id, event_type=ActivityType.status_changed, payload={"from": old_status.value, "to": lead.status.value}))
+    if changed: lead.version += 1
+    if "status" in changed: db.add(Activity(lead_id=lead.id, actor_user_id=context.user.id if context.user else None, source="agent" if context.is_agent else "user", event_type=ActivityType.status_changed, payload={"from": old_status.value, "to": lead.status.value, "version": lead.version}))
     other = [k for k in changed if k != "status"]
     if other: db.add(Activity(lead_id=lead.id, event_type=ActivityType.lead_updated, payload={"fields": other}))
     db.commit(); return get_lead_or_404(db, lead.id, context.business.id)

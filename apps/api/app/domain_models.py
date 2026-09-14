@@ -140,6 +140,7 @@ class Lead(Base):
     next_action: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    version: Mapped[int] = mapped_column(default=1, server_default="1", nullable=False)
 
     business: Mapped[Business] = relationship(back_populates="leads")
     reminders: Mapped[list["Reminder"]] = relationship(back_populates="lead", cascade="all, delete-orphan", order_by="Reminder.due_at")
