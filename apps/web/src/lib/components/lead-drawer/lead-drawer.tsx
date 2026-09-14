@@ -4,15 +4,23 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FileText, LoaderCircle, Paperclip, Send, Trash2, Upload, X } from "lucide-react";
 import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/select-menu";
-import { leadDrawerApi, type LeadDrawerApi, type LeadTimelineItem } from "@/lib/api/lead-drawer";
+import { leadDrawerApi, type LeadDrawerApi, type LeadTimelineItem, type UploadRecord } from "@/lib/api/lead-drawer";
 import { LeadStatus, type Lead, type LeadAttachment } from "@/lib/types";
 import styles from "@/lib/components/crm-dashboard/crm-dashboard.module.scss";
 
 const draftKey = (id: string) => `zcrm:lead-drawer:draft:${id}`;
 type Tab = "activity" | "details" | "files";
 type Draft = { body: string; interactionType: string; idempotencyKey: string };
-type UploadPhase = "uploading" | "complete" | "error";
-type UploadItem = { id: string; file: File; progress: number; phase: UploadPhase; error?: string };
+type UploadPhase = "initiating" | "checking" | "uploading" | "complete" | "error";
+type UploadItem = {
+  id: string;
+  file: File;
+  progress: number;
+  phase: UploadPhase;
+  idempotencyKey: string;
+  uploadId?: string;
+  error?: string;
+};
 
 const statusOptions: SelectMenuOption<LeadStatus>[] = Object.values(LeadStatus).map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) }));
 const interactionTypes = ["reply", "message", "call", "meeting", "proposal_sent", "note", "other"] as const;
@@ -37,6 +45,19 @@ function timelineTitle(item: LeadTimelineItem) {
   if (item.kind === "interaction") return item.payload.interaction_type.replaceAll("_", " ");
   if (item.kind === "attachment") return item.payload.kind.replaceAll("_", " ");
   return (item.payload.event_type ?? "activity").replaceAll("_", " ");
+}
+function completedUpload(upload: UploadRecord): LeadAttachment {
+  return {
+    id: upload.id,
+    lead_id: upload.lead_id,
+    filename: upload.filename,
+    content_type: upload.content_type,
+    size_bytes: upload.size_bytes,
+    kind: upload.kind,
+    status: "completed",
+    redacted: false,
+    created_at: upload.created_at,
+  };
 }
 function timelineText(item: LeadTimelineItem) {
   if (item.redacted) return "This timeline item is redacted.";
@@ -100,7 +121,7 @@ export default function LeadDrawer({ lead, onClose, onUpdate, onRefresh, api = l
     setLoadingFiles(true); setFilesError("");
     try {
       const items = await api.listAttachments(requestedLeadId);
-      if (activeLeadId.current === requestedLeadId) setAttachments(items);
+      if (activeLeadId.current === requestedLeadId) setAttachments(items.filter((item) => !item.redacted && (!item.status || item.status === "completed")));
     } catch {
       if (activeLeadId.current === requestedLeadId) setFilesError("Files are temporarily unavailable. Try again.");
     } finally { if (activeLeadId.current === requestedLeadId) setLoadingFiles(false); }
@@ -178,22 +199,52 @@ export default function LeadDrawer({ lead, onClose, onUpdate, onRefresh, api = l
   function addFiles(files: FileList | null) {
     if (!files) return;
     Array.from(files).forEach((file) => {
-      const item: UploadItem = { id: `${file.name}-${file.lastModified}-${Math.random()}`, file, progress: 0, phase: "uploading" };
+      const item: UploadItem = {
+        id: `${file.name}-${file.lastModified}-${Math.random()}`,
+        file,
+        progress: 0,
+        phase: file.size > 10 * 1024 * 1024 ? "error" : "initiating",
+        idempotencyKey: newIdempotencyKey(),
+        error: file.size > 10 * 1024 * 1024 ? "File exceeds the 10 MB limit." : undefined,
+      };
       setUploads((current) => [...current, item]);
-      void upload(item, lead.id);
+      if (!item.error) void upload(item, lead.id);
     });
   }
   async function upload(item: UploadItem, requestedLeadId = lead.id) {
-    if (item.phase === "complete" || uploadingIds.current.has(item.id)) return;
+    if (item.phase === "complete" || uploadingIds.current.has(item.id) || item.file.size > 10 * 1024 * 1024) return;
     uploadingIds.current.add(item.id);
-    setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, error: undefined, phase: "uploading" } : entry));
     try {
-      const attachment = await api.uploadAttachment(requestedLeadId, item.file, "document", (progress) => {
+      let uploadId = item.uploadId;
+      if (!uploadId) {
+        setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, error: undefined, phase: "initiating" } : entry));
+        const initiated = await api.initiateAttachment(requestedLeadId, {
+          filename: item.file.name,
+          content_type: item.file.type || "application/octet-stream",
+          kind: "document",
+          size_bytes: item.file.size,
+        }, item.idempotencyKey);
+        uploadId = initiated.id;
+        if (activeLeadId.current !== requestedLeadId) return;
+        setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, uploadId, phase: "uploading" } : entry));
+      } else {
+        setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, error: undefined, phase: "checking" } : entry));
+        const remote = await api.getUpload(uploadId);
+        if (activeLeadId.current !== requestedLeadId) return;
+        if (remote.status === "completed") {
+          const attachment = completedUpload(remote);
+          setAttachments((current) => current.some((entry) => entry.id === attachment.id) ? current : [attachment, ...current]);
+          setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, progress: 100, phase: "complete" } : entry));
+          return;
+        }
+      }
+      setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, uploadId, phase: "uploading" } : entry));
+      const attachment = await api.completeAttachment(uploadId, item.file, (progress) => {
         if (activeLeadId.current === requestedLeadId) setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, progress } : entry));
       });
       if (activeLeadId.current !== requestedLeadId) return;
       setAttachments((current) => current.some((entry) => entry.id === attachment.id) ? current : [attachment, ...current]);
-      setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, progress: 100, phase: "complete" } : entry));
+      setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, uploadId, progress: 100, phase: "complete" } : entry));
     } catch {
       if (activeLeadId.current === requestedLeadId) setUploads((current) => current.map((entry) => entry.id === item.id ? { ...entry, phase: "error", error: "Upload failed. Retry when ready." } : entry));
     } finally { uploadingIds.current.delete(item.id); }
@@ -245,7 +296,7 @@ export default function LeadDrawer({ lead, onClose, onUpdate, onRefresh, api = l
       {tab === "files" && <section className={styles.drawerTabPanel} id="lead-drawer-panel-files" role="tabpanel" aria-labelledby="lead-drawer-tab-files">
         <label className={styles.uploadDrop}><Upload size={18} /><span>Add files</span><small>Up to 10 MB per file</small><input type="file" multiple onChange={(event) => { addFiles(event.target.files); event.currentTarget.value = ""; }} /></label>
         {filesError && <div className={styles.inlineError} role="alert">{filesError} <button onClick={() => void loadFiles()}>Retry</button></div>}{loadingFiles && <p className={styles.noActivity}>Loading files…</p>}
-        {uploads.map((item) => <div className={styles.uploadRow} key={item.id}><Paperclip size={15} /><div><strong>{item.file.name}</strong>{item.error ? <small className={styles.inlineError}>{item.error} <button onClick={() => void upload(item)}>Retry</button></small> : <small>{item.phase === "complete" ? "Uploaded" : `${item.progress}% uploaded`}</small>}<progress value={item.progress} max="100" /></div></div>)}
+        {uploads.map((item) => <div className={styles.uploadRow} key={item.id}><Paperclip size={15} /><div><strong>{item.file.name}</strong>{item.error ? <small className={styles.inlineError}>{item.error} <button onClick={() => void upload(item)}>Retry</button></small> : <small>{item.phase === "complete" ? "Uploaded" : item.phase === "initiating" ? "Preparing upload…" : item.phase === "checking" ? "Checking upload status…" : `${item.progress}% uploaded`}</small>}<progress value={item.progress} max="100" /></div></div>)}
         {attachments.map((attachment) => <div className={styles.fileRow} key={attachment.id}><Paperclip size={15} /><div><a href={`/api/attachments/${attachment.id}/download`}>{attachment.filename}</a><small>{Math.ceil(attachment.size_bytes / 1024)} KB · {attachment.kind}</small></div><button aria-label={`Delete ${attachment.filename}`} onClick={() => void removeFile(attachment)}><Trash2 size={15} /></button></div>)}
         {!loadingFiles && !filesError && !attachments.length && !uploads.length && <p className={styles.noActivity}>No files attached.</p>}
       </section>}

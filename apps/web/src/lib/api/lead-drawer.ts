@@ -70,12 +70,27 @@ export type StatusTransitionInput = {
 };
 
 export type UploadProgress = (percent: number) => void;
+export type UploadStatus = "initiated" | "failed" | "completed";
+export type UploadRecord = {
+  id: string;
+  lead_id: string;
+  filename: string;
+  content_type: string;
+  kind: string;
+  status: UploadStatus;
+  size_bytes: number;
+  created_at: string;
+  completed_at: string | null;
+};
+export type InitiateUploadInput = Pick<UploadRecord, "filename" | "content_type" | "kind" | "size_bytes">;
 export type LeadDrawerApi = {
   getTimeline(leadId: string, cursor?: string | null): Promise<LeadTimelinePage>;
   createInteraction(leadId: string, input: CreateInteractionInput, idempotencyKey: string): Promise<Interaction>;
   transitionStatus(leadId: string, input: StatusTransitionInput): Promise<Lead>;
   listAttachments(leadId: string): Promise<LeadAttachment[]>;
-  uploadAttachment(leadId: string, file: File, kind: string, onProgress: UploadProgress): Promise<LeadAttachment>;
+  initiateAttachment(leadId: string, input: InitiateUploadInput, idempotencyKey: string): Promise<UploadRecord>;
+  getUpload(uploadId: string): Promise<UploadRecord>;
+  completeAttachment(uploadId: string, file: File, onProgress: UploadProgress): Promise<LeadAttachment>;
   deleteAttachment(attachmentId: string): Promise<void>;
 };
 
@@ -90,13 +105,12 @@ async function responseJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function xhrUpload(leadId: string, file: File, kind: string, onProgress: UploadProgress) {
+function xhrComplete(uploadId: string, file: File, onProgress: UploadProgress) {
   return new Promise<LeadAttachment>((resolve, reject) => {
     const request = new XMLHttpRequest();
     const form = new FormData();
     form.append("file", file);
-    form.append("kind", kind);
-    request.open("POST", `/api/leads/${leadId}/attachments`);
+    request.open("POST", `/api/uploads/${uploadId}/complete`);
     request.responseType = "json";
     request.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
@@ -136,7 +150,17 @@ export const leadDrawerApi: LeadDrawerApi = {
   async listAttachments(leadId) {
     return responseJson<LeadAttachment[]>(await fetch(`/api/leads/${leadId}/attachments`, { cache: "no-store" }));
   },
-  uploadAttachment: xhrUpload,
+  async initiateAttachment(leadId, input, idempotencyKey) {
+    return responseJson<UploadRecord>(await fetch(`/api/leads/${leadId}/attachments/initiate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+      body: JSON.stringify(input),
+    }));
+  },
+  async getUpload(uploadId) {
+    return responseJson<UploadRecord>(await fetch(`/api/uploads/${uploadId}`, { cache: "no-store" }));
+  },
+  completeAttachment: xhrComplete,
   async deleteAttachment(attachmentId) {
     const response = await fetch(`/api/attachments/${attachmentId}`, { method: "DELETE" });
     if (!response.ok) throw new Error("Could not delete the file.");
