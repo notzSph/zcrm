@@ -28,6 +28,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/select-menu";
 import LeadDrawer from "@/lib/components/lead-drawer/lead-drawer";
+import DashboardCharts from "./dashboard-charts";
 import {
   LeadStatus,
   type Lead,
@@ -360,6 +361,8 @@ export default function CrmDashboard() {
           )}
         </section>
       </div>
+
+      {!loading && <DashboardCharts leads={leads} />}
 
       <section className={styles.board} aria-label="Sales pipeline">
         {stages.map((stage) => {
