@@ -1,6 +1,7 @@
 from app.domain_models import (
     Activity,
     ActivityType,
+    ApiIdempotency,
     Interaction,
     InteractionType,
     LeadAttachment,
@@ -15,6 +16,6 @@ from app.domain_models import (
 )
 
 __all__ = [
-    "Activity", "ActivityType", "Interaction", "InteractionType", "LeadAttachment", "Business", "BusinessMembership", "Lead",
+    "Activity", "ActivityType", "ApiIdempotency", "Interaction", "InteractionType", "LeadAttachment", "Business", "BusinessMembership", "Lead",
     "LeadStatus", "Reminder", "ReminderKind", "User", "UserSession",
 ]

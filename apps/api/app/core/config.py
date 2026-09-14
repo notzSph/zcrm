@@ -24,6 +24,7 @@ class Settings(BaseModel):
     caldav_calendar_name: str = os.getenv("CALDAV_CALENDAR_NAME", "Work")
     caldav_calendar_url: str = os.getenv("CALDAV_CALENDAR_URL", "")
     caldav_timeout_seconds: int = int(os.getenv("CALDAV_TIMEOUT_SECONDS", "15"))
+    timeline_cursor_secret: str = os.getenv("TIMELINE_CURSOR_SECRET", os.getenv("JAYZOO_API_KEY", "change-me-timeline-cursor"))
 
 
 settings = Settings()

@@ -182,6 +182,13 @@ class LeadUpdate(BaseModel):
     next_action: str | None = None
 
 
+class StatusTransitionCreate(BaseModel):
+    status: LeadStatus
+    next_action: str | None = None
+    reason: str | None = Field(default=None, max_length=500)
+    expected_version: int = Field(default=1, ge=1)
+
+
 class LeadOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
@@ -199,6 +206,7 @@ class LeadOut(BaseModel):
     next_action: str | None
     created_at: datetime
     updated_at: datetime
+    version: int
     reminders: list[ReminderOut] = []
     activities: list[ActivityOut] = []
     interactions: list["InteractionOut"] = []
@@ -215,6 +223,35 @@ class InteractionCreate(BaseModel):
     body: str = Field(min_length=1, max_length=10000)
     occurred_at: datetime | None = None
     external_ref: str | None = Field(default=None, max_length=255)
+
+
+class TimelineActor(BaseModel):
+    type: str
+    id: uuid.UUID | None = None
+    label: str | None = None
+
+
+class TimelineSource(BaseModel):
+    type: str
+    label: str | None = None
+
+
+class TimelineItem(BaseModel):
+    id: uuid.UUID
+    kind: str
+    schema_version: int = 1
+    occurred_at: datetime | None
+    recorded_at: datetime
+    actor: TimelineActor
+    source: TimelineSource
+    revision: int
+    redacted: bool
+    payload: dict
+
+
+class TimelinePage(BaseModel):
+    items: list[TimelineItem]
+    next_cursor: str | None = None
 
 
 class InteractionOut(BaseModel):
@@ -236,6 +273,8 @@ class AttachmentOut(BaseModel):
     content_type: str
     size_bytes: int
     kind: str
+    status: str
+    redacted: bool
 
 
 class AttachmentUpdate(BaseModel):
