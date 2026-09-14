@@ -70,6 +70,10 @@ Agent operations use `X-API-Key` and `X-Business-ID`:
 See [`docs/agent-workflow.md`](docs/agent-workflow.md) for the Discord-to-CRM operating
 playbook and retry-safe `external_ref` convention.
 
+Agent reminder creation can target a workspace member's calendar by adding
+`X-Calendar-User-Email: member@zcrm.example`; the API validates membership, stores the
+reminder owner, and uses that user's CalDAV profile. Credentials never leave the API.
+
 ## Backend structure
 
 The API follows the same layered layout as zTrading:
