@@ -11,12 +11,10 @@ depends_on = None
 def upgrade() -> None:
     op.add_column("leads", sa.Column("version", sa.Integer(), nullable=False, server_default="1"))
     op.add_column("lead_attachments", sa.Column("status", sa.String(32), nullable=False, server_default="completed"))
-    op.add_column("lead_attachments", sa.Column("redacted", sa.Boolean(), nullable=False, server_default=sa.false()))
     op.create_index("ix_lead_attachments_status", "lead_attachments", ["status"])
 
 
 def downgrade() -> None:
     op.drop_index("ix_lead_attachments_status", table_name="lead_attachments")
-    op.drop_column("lead_attachments", "redacted")
     op.drop_column("lead_attachments", "status")
     op.drop_column("leads", "version")
