@@ -157,38 +157,28 @@ export default function DashboardCharts({ leads }: { leads: Lead[] }) {
   };
 
   return (
-    <section className={styles.analytics} aria-label="Pipeline insights">
-      <article className={styles.chartCard}>
-        <header className={styles.chartHeader}>
-          <div><span><BarChart3 size={15} /> Pipeline mix</span><h2>Status distribution</h2></div>
-          <em>{activeCount} active</em>
-        </header>
-        <div className={styles.distributionLayout}>
-          <div className={styles.doughnutWrap}>
+    <article className={`${styles.chartCard} ${styles.topChart}`} aria-label="Pipeline insights">
+      <header className={styles.chartHeader}>
+        <div><span><BarChart3 size={15} /> Pipeline pulse</span><h2>Status & activity</h2></div>
+        <em>{activeCount} active</em>
+      </header>
+      <div className={styles.pulseCharts}>
+        <div className={styles.pulsePanel}>
+          <div className={styles.compactDoughnut}>
             <Doughnut data={distributionData} options={doughnutOptions} aria-label="Lead status distribution chart" role="img" />
             <div className={styles.chartCenter}><strong>{leads.length}</strong><span>leads</span></div>
           </div>
-          <div className={styles.chartLegend}>
-            {distribution.map((item) => <div key={item.status}><i style={{ backgroundColor: item.color }} /><span>{item.label}</span><strong>{item.value}</strong></div>)}
-          </div>
+          <p><TrendingUp size={13} /> <strong>{topStatus.label}</strong> · {Math.round((topStatus.value / leads.length) * 100)}%</p>
         </div>
-        <p className={styles.chartInsight}><TrendingUp size={14} /> Largest segment: <strong>{topStatus.label}</strong> ({Math.round((topStatus.value / leads.length) * 100)}%)</p>
-      </article>
-
-      <article className={styles.chartCard}>
-        <header className={styles.chartHeader}>
-          <div><span><Activity size={15} /> Momentum</span><h2>Activity trend</h2></div>
-          <em>14 days</em>
-        </header>
-        {activityTotal > 0 ? (
-          <>
-            <div className={styles.lineWrap}><Line data={activityData} options={lineOptions} aria-label="Recorded activity trend over the last 14 days" role="img" /></div>
-            <p className={styles.chartInsight}><Activity size={14} /> <strong>{activityTotal}</strong> recorded event{activityTotal === 1 ? "" : "s"} in this period</p>
-          </>
-        ) : (
-          <div className={styles.chartEmpty}><Activity size={20} /><div><strong>No recent activity</strong><span>The trend appears after the next recorded lead event.</span></div></div>
-        )}
-      </article>
-    </section>
+        <div className={styles.pulsePanel}>
+          {activityTotal > 0 ? (
+            <div className={styles.compactLine}><Line data={activityData} options={lineOptions} aria-label="Recorded activity trend over the last 14 days" role="img" /></div>
+          ) : (
+            <div className={styles.compactEmpty}><Activity size={19} /><span>No recent activity</span></div>
+          )}
+          <p><Activity size={13} /> <strong>{activityTotal}</strong> event{activityTotal === 1 ? "" : "s"} · 14 days</p>
+        </div>
+      </div>
+    </article>
   );
 }

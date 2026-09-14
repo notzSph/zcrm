@@ -278,6 +278,7 @@ export default function CrmDashboard() {
         </div>
       )}
       <div className={styles.dashboardTop}>
+        <section className={styles.metricGrid} aria-label="Pipeline metrics">
         <Link className={`${styles.metricCard} ${styles.metricPipeline}`} href="/leads">
           <span><ActivityIcon size={16} /> Open pipeline</span>
           <strong>{leads.filter((lead) => !outcomes.includes(lead.status)).length}</strong>
@@ -301,6 +302,7 @@ export default function CrmDashboard() {
           <strong>{leads.length}</strong>
           <small>Browse directory <ChevronRight size={13} /></small>
         </Link>
+        </section>
 
         <section className={styles.reminderStrip}>
           <div className={styles.reminderTitle}>
@@ -360,9 +362,8 @@ export default function CrmDashboard() {
             </div>
           )}
         </section>
+        {!loading && <DashboardCharts leads={leads} />}
       </div>
-
-      {!loading && <DashboardCharts leads={leads} />}
 
       <section className={styles.board} aria-label="Sales pipeline">
         {stages.map((stage) => {
