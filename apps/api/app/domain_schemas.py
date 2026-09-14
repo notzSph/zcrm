@@ -138,6 +138,9 @@ class ReminderOut(BaseModel):
     alarm_minutes_before: list[int]
     completed_at: datetime | None
     external_ref: str | None
+    caldav_uid: str | None
+    caldav_url: str | None
+    calendar_synced: bool
 
 
 class ActivityOut(BaseModel):

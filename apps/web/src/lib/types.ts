@@ -34,6 +34,9 @@ export type Reminder = {
   kind: ReminderKind;
   due_at: string;
   completed_at: string | null;
+  caldav_uid: string | null;
+  caldav_url: string | null;
+  calendar_synced: boolean;
 };
 
 export type Activity = {
