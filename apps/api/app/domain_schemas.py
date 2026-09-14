@@ -281,3 +281,23 @@ class AttachmentUpdate(BaseModel):
     filename: str | None = Field(default=None, min_length=1, max_length=255)
     kind: str | None = Field(default=None, min_length=1, max_length=64)
     created_at: datetime
+
+
+class UploadInitiate(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    content_type: str = Field(default="application/octet-stream", max_length=160)
+    kind: str = Field(default="document", min_length=1, max_length=64)
+    size_bytes: int | None = Field(default=None, ge=0, le=10 * 1024 * 1024)
+
+
+class UploadOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    lead_id: uuid.UUID
+    filename: str
+    content_type: str
+    kind: str
+    status: str
+    size_bytes: int | None
+    created_at: datetime
+    completed_at: datetime | None

@@ -121,6 +121,25 @@ class ApiIdempotency(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class LeadUpload(Base):
+    __tablename__ = "lead_uploads"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    lead_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), index=True)
+    filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(64), default="document", server_default="document")
+    status: Mapped[str] = mapped_column(String(32), default="initiated", server_default="initiated", index=True)
+    storage_key: Mapped[str | None] = mapped_column(String(255), unique=True)
+    size_bytes: Mapped[int | None] = mapped_column()
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    source: Mapped[str] = mapped_column(String(64), default="user", server_default="user")
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), index=True)
+    request_hash: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class Lead(Base):
     __tablename__ = "leads"
 
