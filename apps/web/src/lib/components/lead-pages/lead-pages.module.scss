@@ -1004,3 +1004,65 @@
 .infoCard:nth-child(5)::before { background: $red; }
 @media (max-width: 760px) { .directoryTools { grid-template-columns: minmax(0, 1fr) auto; } .searchField { grid-column: 1 / -1; } }
 @media (max-width: 520px) { .directoryTools { grid-template-columns: minmax(0, 1fr); } .resultCount { justify-self: start; } }
+
+/* Production lead workspace: clear hierarchy without placeholder-heavy cards. */
+.page { max-width: 112rem; padding-top: clamp(1.5rem,3vw,2.75rem); }
+.profileHeader { align-items: center; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid rgba($zLavender,.2); }
+.profileTitle { gap: 1rem; }
+.largeAvatar { width: 3.5rem; height: 3.5rem; border-color: rgba($zLavender,.42); border-radius: 1rem; background: linear-gradient(145deg,rgba($zViolet,.42),rgba($zBg3,.82)); box-shadow: 0 .8rem 2rem -1rem rgba($zViolet,.75), inset 0 1px rgba($white,.1); font-size: 1.4rem; }
+.titleLine h1 { color: $zText; font-size: clamp(2rem,3.2vw,3.25rem); font-weight: 650; letter-spacing: -.055em; }
+.heroMeta { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.55rem; }
+.heroMeta span { display:inline-flex; align-items:center; gap:.35rem; padding:.28rem .55rem; color:$zTextSoft; border:1px solid rgba($zLavender,.16); border-radius:999px; background:rgba($zBg2,.7); font-size:.75rem; }
+.profileActions { justify-content:flex-end; }
+.primaryButton { border:1px solid rgba($zLavender,.4); background:linear-gradient(135deg,$zViolet,#8c6fff); box-shadow:0 .7rem 1.8rem -.9rem rgba($zViolet,.9); }
+.secondaryButton { border-color:rgba($zLavender,.24); background:rgba($zBg2,.72); }
+.profileGrid { grid-template-columns:repeat(12,minmax(0,1fr)); gap:1rem; margin-bottom:1rem; }
+.infoCard { min-height:0; padding:1.35rem 1.4rem; border-color:rgba($zLavender,.26); border-radius:1rem; background:linear-gradient(145deg,rgba($zBg2,.94),rgba($zBg1,.76)); box-shadow:0 1.25rem 3rem -2.4rem rgba(#000,.95),inset 0 1px rgba($white,.04); }
+.infoCard::before { width:3px; }
+.infoCard h2 { margin-bottom:1rem; color:$zText; font-size:.78rem; font-weight:750; letter-spacing:.08em; }
+.infoCard h2 svg { color:$zLavender; }
+.contactCard { grid-column:span 6; }
+.infoCard.contactCard::before { background:$zCyan; }
+.nextActionCard { grid-column:span 6; background:linear-gradient(145deg,rgba($zViolet,.18),rgba($zBg1,.84)); }
+.infoCard.nextActionCard::before { background:$zOrange; }
+.nextActionCard p { min-height:2.8rem; color:$zText; font-size:1.02rem; line-height:1.55; }
+.nextActionCard button { display:inline-flex; align-items:center; gap:.4rem; min-height:2.35rem; margin-top:.45rem; padding:0 .75rem; color:$zLavender; border:1px solid rgba($zLavender,.24); border-radius:.65rem; background:rgba($zBg0,.35); font-size:.8rem; }
+.descriptionCard { grid-column:span 8; }
+.infoCard.descriptionCard::before { background:$zLavender; }
+.descriptionCard button { display:inline-flex; align-items:center; gap:.4rem; min-height:2.35rem; margin-top:.45rem; padding:0 .75rem; color:$zLavender; border:1px solid rgba($zLavender,.24); border-radius:.65rem; background:rgba($zBg0,.35); font-size:.8rem; }
+.recordCard { grid-column:span 4; }
+.infoCard.recordCard::before { background:$zGreen; }
+.detailList { display:grid; gap:.65rem; }
+.detailRow { display:flex; align-items:center; gap:.65rem; min-width:0; color:$zTextSoft; font-size:.9rem; }
+.detailRow svg,.euroIcon { width:1.85rem; height:1.85rem; display:grid; flex:0 0 auto; place-items:center; padding:.4rem; color:$zLavender; border:1px solid rgba($zLavender,.18); border-radius:.55rem; background:rgba($zViolet,.09); }
+.detailRow span:last-child { min-width:0; overflow-wrap:anywhere; }
+a.detailRow:hover { color:$zText; }
+.profileWorkspace { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(20rem,.8fr); grid-template-areas:"activity followups" "interactions attachments"; align-items:start; gap:1rem; }
+.profileWorkspace .timeline { margin:0; border-color:rgba($zLavender,.25); border-radius:1rem; background:linear-gradient(155deg,rgba($zBg2,.85),rgba($zBg1,.68)); box-shadow:0 1.4rem 3.2rem -2.5rem rgba(#000,.95),inset 0 1px rgba($white,.035); }
+.followupPanel { grid-area:followups; }
+.activityPanel { grid-area:activity; }
+.interactionPanel { grid-area:interactions; }
+.attachmentPanel { grid-area:attachments; }
+.timelineHead { padding:1.1rem 1.2rem; background:rgba($zBg0,.18); }
+.timelineHead span { color:$zLavender; font-size:.7rem; font-weight:700; }
+.timelineHead h2 { font-size:1rem; }
+.timelineRow { padding:1rem 1.2rem; }
+.timelineRow:hover { background:rgba($zLavender,.035); }
+.timelineRow strong { color:$zText; }
+.timelineRow p { margin:.2rem 0; color:$zTextSoft; }
+.empty { min-height:7rem; padding:1.25rem; color:$zTextMuted; background:rgba($zBg0,.16); }
+.quickReminderForm { border-top:1px solid rgba($zLavender,.18); }
+@media (max-width:1100px) {
+  .profileWorkspace { grid-template-columns:1fr; grid-template-areas:"followups" "activity" "interactions" "attachments"; }
+}
+@media (max-width:760px) {
+  .profileHeader { align-items:flex-start; }
+  .profileActions { justify-content:flex-start; }
+  .profileGrid { grid-template-columns:1fr; }
+  .contactCard,.nextActionCard,.descriptionCard,.recordCard,.recordCard:nth-child(3) { grid-column:1; }
+}
+@media (max-width:520px) {
+  .page { padding:1.15rem 1rem 2rem; }
+  .profileActions .secondaryButton,.profileActions .primaryButton { width:100%; }
+  .infoCard { padding:1.1rem; }
+}

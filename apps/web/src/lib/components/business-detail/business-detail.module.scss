@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "@/lib/styles/variables" as *;
 .page {
   max-width: 1020px;
@@ -84,6 +85,11 @@
   color: $white;
   background: $zViolet;
 }
+.primary:hover,
+.rename button:hover,
+.addMember button:hover {
+  background: color.adjust($zViolet, $lightness: 6%);
+}
 .secondary {
   color: $zTextSoft;
   border: 1px solid $zLine;
@@ -156,6 +162,10 @@
   font-size: .9375rem;
 }
 .memberList strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
   color: $zTextSoft;
   font-size: .9375rem;
 }
@@ -165,6 +175,18 @@
   gap: 5px;
   color: $zTextMuted;
   font-size: .8125rem;
+}
+.owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  color: $amber;
+  border-radius: 999px;
+  background: rgba($amber, .12);
+  font: 600 .6875rem var(--font-mono);
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
 .memberList select,
 .members > label select {
@@ -230,6 +252,17 @@
 }
 .delete:hover {
   background: rgba($zPink, 0.13);
+}
+.primary:focus-visible,
+.secondary:focus-visible,
+.delete:focus-visible,
+.back:focus-visible,
+.rename input:focus-visible,
+.addMember input:focus-visible,
+.memberList select:focus-visible,
+.members > label select:focus-visible {
+  outline: 2px solid $zLavender;
+  outline-offset: 2px;
 }
 @media (max-width: 720px) {
   .page header {

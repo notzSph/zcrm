@@ -28,6 +28,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/select-menu";
 import LeadDrawer from "@/lib/components/lead-drawer/lead-drawer";
+import DashboardCharts from "./dashboard-charts";
 import {
   LeadStatus,
   type Lead,
@@ -277,26 +278,26 @@ export default function CrmDashboard() {
         </div>
       )}
       <div className={styles.dashboardTop}>
-        <Link className={styles.metricCard} href="/leads">
-          <span><ActivityIcon size={14} /> Open pipeline</span>
+        <Link className={`${styles.metricCard} ${styles.metricPipeline}`} href="/leads">
+          <span><ActivityIcon size={16} /> Open pipeline</span>
           <strong>{leads.filter((lead) => !outcomes.includes(lead.status)).length}</strong>
           <small>Review active opportunities <ChevronRight size={13} /></small>
         </Link>
-        <Link className={styles.metricCard} href="/calendar">
-          <span><Bell size={14} /> Follow-ups today</span>
+        <Link className={`${styles.metricCard} ${styles.metricFollowups}`} href="/calendar">
+          <span><Bell size={16} /> Follow-ups today</span>
           <strong>{dueToday.length}</strong>
           <small>Open calendar <ChevronRight size={13} /></small>
         </Link>
         <Link
-          className={`${styles.metricCard} ${overdue.length ? styles.danger : ""}`}
+          className={`${styles.metricCard} ${styles.metricHealth} ${overdue.length ? styles.danger : ""}`}
           href="/calendar"
         >
-          <span><AlarmClock size={14} /> Pipeline health</span>
+          <span><AlarmClock size={16} /> Pipeline health</span>
           <strong>{overdue.length}</strong>
           <small>{overdue.length ? "overdue" : "no overdue"} · {leads.filter((lead) => outcomes.includes(lead.status)).length} closed</small>
         </Link>
-        <Link className={styles.metricCard} href="/leads">
-          <span><Users size={14} /> Total leads</span>
+        <Link className={`${styles.metricCard} ${styles.metricLeads}`} href="/leads">
+          <span><Users size={16} /> Total leads</span>
           <strong>{leads.length}</strong>
           <small>Browse directory <ChevronRight size={13} /></small>
         </Link>
@@ -360,6 +361,8 @@ export default function CrmDashboard() {
           )}
         </section>
       </div>
+
+      {!loading && <DashboardCharts leads={leads} />}
 
       <section className={styles.board} aria-label="Sales pipeline">
         {stages.map((stage) => {

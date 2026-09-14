@@ -17,6 +17,7 @@
   font-weight: 700;
 }
 .trigger:hover, .trigger[aria-expanded="true"] { color: $zText; border-color: rgba($zLavender, .58); background: $zBg3; }
+.trigger:focus-visible { outline: 2px solid $zLavender; outline-offset: 2px; }
 .trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trigger[data-tone="violet"] { color: $zLavender; background: rgba($zViolet, .14); }
 .trigger[data-tone="yellow"] { color: $amber; background: rgba($amber, .1); }
@@ -42,7 +43,7 @@
   backdrop-filter: blur(18px);
 }
 .menu li { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto auto; align-items: center; gap: .5rem; min-height: 2.5rem; padding: .5rem .625rem; color: $zTextSoft; border-radius: .6rem; cursor: pointer; font-size: .875rem; outline: 0; }
-.menu li:hover, .menu li:focus-visible { color: $zText; background: $zBg3; }
+.menu li:hover, .menu li:focus-visible { color: $zText; background: $zBg3; box-shadow: inset 0 0 0 1px rgba($zLavender, .42); }
 .menu li[aria-selected="true"] { background: rgba($zViolet, .14); }
 .menu li[data-tone="violet"] > svg:first-child { color: $zLavender; }
 .menu li[data-tone="yellow"] > svg:first-child { color: $amber; }

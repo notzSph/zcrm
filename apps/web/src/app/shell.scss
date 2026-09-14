@@ -12,10 +12,7 @@ html, body { min-height: 100%; }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(ellipse at 85% -10%, rgba($zViolet, .2), transparent 42rem),
-    radial-gradient(ellipse at 10% 100%, rgba($zCyan, .055), transparent 32rem),
-    $zBg0;
+  background: #0d0c16;
   color: $zText;
   font-family: var(--font-sans);
   font-size: 1rem;

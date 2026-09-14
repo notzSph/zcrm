@@ -50,6 +50,13 @@
 .controls button:hover {
   background: $zBg2;
 }
+.controls button:focus-visible,
+.event:focus-visible,
+.agendaItem:focus-visible,
+.error button:focus-visible {
+  outline: 2px solid $zLavender;
+  outline-offset: 2px;
+}
 .controls .todayButton {
   display: block;
   width: auto;
@@ -229,6 +236,10 @@
 }
 .agendaItem:hover {
   background: $zBg2;
+}
+.agendaItem:focus-visible {
+  position: relative;
+  z-index: 1;
 }
 .dateBadge {
   display: grid;

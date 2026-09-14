@@ -7,6 +7,7 @@ import {
   Building2,
   Check,
   Globe2,
+  Crown,
   Mail,
   Pencil,
   Trash2,
@@ -75,13 +76,7 @@ export default function BusinessDetail({ businessId }: { businessId: string }) {
     const response = await fetch(`/api/businesses/${businessId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.get("name"),
-        logo_url: business?.logo_url,
-        website: business?.website,
-        industry: business?.industry,
-        description: business?.description,
-      }),
+      body: JSON.stringify({ name: form.get("name") }),
     });
     if (!response.ok) {
       setError("Could not rename the business.");
@@ -196,10 +191,7 @@ export default function BusinessDetail({ businessId }: { businessId: string }) {
               <h1>{business.name}</h1>
             </>
           )}
-          <p>
-            {business.description ||
-              "Shared pipeline, follow-ups, and history for every member."}
-          </p>
+          {business.description && <p>{business.description}</p>}
         </div>
         <div className={styles.headerActions}>
           {isAdmin && (
@@ -252,7 +244,14 @@ export default function BusinessDetail({ businessId }: { businessId: string }) {
           {members.map((member) => (
             <div key={member.id}>
               <span>{member.display_name.slice(0, 1).toUpperCase()}</span>
-              <strong>{member.display_name}</strong>
+              <strong>
+                {member.display_name}
+                {member.id === business.owner_id && (
+                  <span className={styles.owner} title="Business owner">
+                    <Crown size={13} aria-hidden="true" /> Owner
+                  </span>
+                )}
+              </strong>
               <small>
                 <Mail size={12} /> {member.email}
               </small>
