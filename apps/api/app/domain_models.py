@@ -154,6 +154,10 @@ class Reminder(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     lead: Mapped[Lead] = relationship(back_populates="reminders")
 
+    @property
+    def calendar_synced(self) -> bool:
+        return bool(self.caldav_uid and self.caldav_url)
+
 
 class Activity(Base):
     __tablename__ = "activities"
