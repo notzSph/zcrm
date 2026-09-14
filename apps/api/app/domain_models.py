@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import BigInteger, JSON, DateTime, Enum, ForeignKey, Numeric, String, Text, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .core.db import Base
@@ -108,6 +108,19 @@ class UserSession(Base):
     active_business: Mapped[Business | None] = relationship(lazy="selectin")
 
 
+class ApiIdempotency(Base):
+    __tablename__ = "api_idempotency"
+    __table_args__ = (UniqueConstraint("business_id", "scope_key", name="ux_api_idempotency_business_scope"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    business_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    scope_key: Mapped[str] = mapped_column(String(255))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    status_code: Mapped[int] = mapped_column(default=201, nullable=False)
+    response_body: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class Lead(Base):
     __tablename__ = "leads"
 
@@ -166,6 +179,11 @@ class Activity(Base):
     lead_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), index=True)
     event_type: Mapped[ActivityType] = mapped_column(Enum(ActivityType, name="activity_type"), index=True)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    source: Mapped[str] = mapped_column(String(64), default="system", server_default="system", nullable=False)
+    revision: Mapped[int] = mapped_column(default=1, server_default="1", nullable=False)
+    redacted: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    recorded_seq: Mapped[int] = mapped_column(BigInteger, index=True, nullable=False, server_default=text("nextval('timeline_recorded_seq')"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     lead: Mapped[Lead] = relationship(back_populates="activities")
 
@@ -179,6 +197,11 @@ class Interaction(Base):
     body: Mapped[str] = mapped_column(Text)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     external_ref: Mapped[str | None] = mapped_column(String(255), index=True)
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    source: Mapped[str] = mapped_column(String(64), default="user", server_default="user", nullable=False)
+    revision: Mapped[int] = mapped_column(default=1, server_default="1", nullable=False)
+    redacted: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    recorded_seq: Mapped[int] = mapped_column(BigInteger, index=True, nullable=False, server_default=text("nextval('timeline_recorded_seq')"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     lead: Mapped[Lead] = relationship(back_populates="interactions")
 
@@ -193,5 +216,10 @@ class LeadAttachment(Base):
     content_type: Mapped[str] = mapped_column(String(160))
     size_bytes: Mapped[int] = mapped_column()
     kind: Mapped[str] = mapped_column(String(64), default="document", index=True)
+    status: Mapped[str] = mapped_column(String(32), default="completed", server_default="completed", index=True, nullable=False)
+    source: Mapped[str] = mapped_column(String(64), default="user", server_default="user", nullable=False)
+    revision: Mapped[int] = mapped_column(default=1, server_default="1", nullable=False)
+    redacted: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    recorded_seq: Mapped[int] = mapped_column(BigInteger, index=True, nullable=False, server_default=text("nextval('timeline_recorded_seq')"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     lead: Mapped[Lead] = relationship(back_populates="attachments")

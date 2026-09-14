@@ -1,18 +1,47 @@
+import base64
+import hashlib
+import hmac
+import json
 from datetime import UTC, datetime, time
 import os
 from pathlib import Path
 from typing import Literal
 import uuid
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 from app.caldav import CalDAVError, delete_event, sync_reminder
-from app.domain_models import Activity, ActivityType, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, Reminder, ReminderKind
-from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate
+from app.domain_models import Activity, ActivityType, ApiIdempotency, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, Reminder, ReminderKind
+from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate, TimelineActor, TimelineItem, TimelinePage, TimelineSource
+from app.core.config import settings
 from app.security import RequestContext, get_db, require_context
 
 router = APIRouter(tags=["crm"])
+
+TIMELINE_SCHEMA_VERSION = 1
+
+def _sign_cursor(payload: dict) -> str:
+    encoded = base64.urlsafe_b64encode(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).decode().rstrip("=")
+    signature = hmac.new(settings.timeline_cursor_secret.encode(), encoded.encode(), hashlib.sha256).hexdigest()
+    return f"{encoded}.{signature}"
+
+def _read_cursor(value: str) -> dict:
+    try:
+        encoded, signature = value.split(".", 1)
+        expected = hmac.new(settings.timeline_cursor_secret.encode(), encoded.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected): raise ValueError
+        return json.loads(base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
+    except (ValueError, TypeError, json.JSONDecodeError):
+        raise HTTPException(status_code=400, detail="Invalid timeline cursor") from None
+
+def _timeline_item(record: object) -> TimelineItem:
+    if isinstance(record, Interaction):
+        return TimelineItem(id=record.id, kind="interaction", occurred_at=record.occurred_at, recorded_at=record.created_at, actor=TimelineActor(type="user" if record.actor_user_id else "system", id=record.actor_user_id), source=TimelineSource(type=record.source), revision=record.revision, redacted=record.redacted, payload={"interaction_type": record.interaction_type.value, "body": None if record.redacted else record.body, "external_ref": record.external_ref})
+    if isinstance(record, LeadAttachment):
+        return TimelineItem(id=record.id, kind="attachment", occurred_at=record.created_at, recorded_at=record.created_at, actor=TimelineActor(type="user" if record.source == "user" else "system"), source=TimelineSource(type=record.source), revision=record.revision, redacted=record.redacted, payload={"filename": None if record.redacted else record.filename, "content_type": None if record.redacted else record.content_type, "size_bytes": None if record.redacted else record.size_bytes, "kind": record.kind, "status": record.status})
+    assert isinstance(record, Activity)
+    return TimelineItem(id=record.id, kind="activity", occurred_at=record.created_at, recorded_at=record.created_at, actor=TimelineActor(type="user" if record.actor_user_id else "system", id=record.actor_user_id), source=TimelineSource(type=record.source), revision=record.revision, redacted=record.redacted, payload={} if record.redacted else {"event_type": record.event_type.value, **record.payload})
 
 def lead_query(): return select(Lead).options(selectinload(Lead.reminders), selectinload(Lead.activities), selectinload(Lead.interactions), selectinload(Lead.attachments))
 def get_lead_or_404(db: Session, lead_id: uuid.UUID, business_id: uuid.UUID) -> Lead:
@@ -51,11 +80,69 @@ def list_interactions(lead_id: uuid.UUID, context: RequestContext = Depends(requ
     return list(db.scalars(select(Interaction).join(Lead).where(Interaction.lead_id == lead_id, Lead.business_id == context.business.id).order_by(Interaction.occurred_at.desc())))
 
 @router.post("/leads/{lead_id}/interactions", response_model=InteractionOut, status_code=201)
-def create_interaction(lead_id: uuid.UUID, payload: InteractionCreate, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Interaction:
+def create_interaction(lead_id: uuid.UUID, payload: InteractionCreate, idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"), context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Interaction:
     get_lead_or_404(db, lead_id, context.business.id)
-    interaction = Interaction(lead_id=lead_id, interaction_type=payload.interaction_type, body=payload.body.strip(), occurred_at=payload.occurred_at or datetime.now(UTC), external_ref=payload.external_ref)
-    db.add(interaction); db.commit(); db.refresh(interaction)
+    request_hash = hashlib.sha256(json.dumps({"lead_id": str(lead_id), "payload": payload.model_dump(mode="json")}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if idempotency_key:
+        replay = db.scalar(select(ApiIdempotency).where(ApiIdempotency.business_id == context.business.id, ApiIdempotency.scope_key == idempotency_key))
+        if replay:
+            if replay.request_hash != request_hash:
+                raise HTTPException(status_code=409, detail="Idempotency key was used with a different request")
+            return replay.response_body
+    interaction = Interaction(lead_id=lead_id, interaction_type=payload.interaction_type, body=payload.body.strip(), occurred_at=payload.occurred_at or datetime.now(UTC), external_ref=payload.external_ref, actor_user_id=context.user.id if context.user else None, source="agent" if context.is_agent else "user")
+    db.add(interaction); db.flush()
+    if idempotency_key:
+        response_body = InteractionOut.model_validate(interaction).model_dump(mode="json")
+        db.add(ApiIdempotency(business_id=context.business.id, scope_key=idempotency_key, request_hash=request_hash, response_body=response_body))
+    db.commit(); db.refresh(interaction)
     return interaction
+
+@router.get("/leads/{lead_id}/timeline", response_model=TimelinePage)
+def lead_timeline(
+    lead_id: uuid.UUID,
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+    types: list[str] | None = Query(default=None),
+    context: RequestContext = Depends(require_context),
+    db: Session = Depends(get_db),
+) -> TimelinePage:
+    get_lead_or_404(db, lead_id, context.business.id)
+    requested_types = set(types or {"interaction", "attachment", "activity"})
+    invalid_types = requested_types - {"interaction", "attachment", "activity"}
+    if invalid_types:
+        raise HTTPException(status_code=400, detail="Unsupported timeline type")
+    base = {"version": TIMELINE_SCHEMA_VERSION, "lead_id": str(lead_id), "types": sorted(requested_types), "direction": "desc"}
+    if cursor:
+        decoded = _read_cursor(cursor)
+        if {key: decoded.get(key) for key in base} != base:
+            raise HTTPException(status_code=400, detail="Cursor does not match timeline query")
+        snapshot_seq = int(decoded["snapshot_seq"])
+        before = (datetime.fromisoformat(decoded["occurred_at"]) if decoded.get("occurred_at") else None, uuid.UUID(decoded["id"]) if decoded.get("id") else None)
+    else:
+        maxima: list[int] = []
+        for model in (Interaction, LeadAttachment, Activity):
+            if model.__name__.lower().replace("lead", "") in requested_types or (model is Activity and "activity" in requested_types):
+                value = db.scalar(select(func.max(model.recorded_seq)).join(Lead, model.lead_id == Lead.id).where(model.lead_id == lead_id, Lead.business_id == context.business.id))
+                if value is not None: maxima.append(value)
+        snapshot_seq = max(maxima, default=0)
+        before = (None, None)
+    records: list[object] = []
+    if "interaction" in requested_types:
+        records.extend(db.scalars(select(Interaction).join(Lead).where(Interaction.lead_id == lead_id, Lead.business_id == context.business.id, Interaction.recorded_seq <= snapshot_seq)).all())
+    if "attachment" in requested_types:
+        records.extend(db.scalars(select(LeadAttachment).join(Lead).where(LeadAttachment.lead_id == lead_id, Lead.business_id == context.business.id, LeadAttachment.recorded_seq <= snapshot_seq)).all())
+    if "activity" in requested_types:
+        records.extend(db.scalars(select(Activity).join(Lead).where(Activity.lead_id == lead_id, Lead.business_id == context.business.id, Activity.recorded_seq <= snapshot_seq)).all())
+    items = [_timeline_item(record) for record in records]
+    items.sort(key=lambda item: (item.occurred_at or datetime.min.replace(tzinfo=UTC), item.id.hex), reverse=True)
+    if before[0] is not None and before[1] is not None:
+        items = [item for item in items if (item.occurred_at or datetime.min.replace(tzinfo=UTC), item.id) < before]
+    page = items[:limit]
+    next_cursor = None
+    if len(items) > limit and page:
+        last = page[-1]
+        next_cursor = _sign_cursor({**base, "snapshot_seq": snapshot_seq, "occurred_at": last.occurred_at.isoformat() if last.occurred_at else None, "id": str(last.id)})
+    return TimelinePage(items=page, next_cursor=next_cursor)
 
 UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "/app/uploads")) / "leads"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -81,7 +168,7 @@ async def upload_attachment(lead_id: uuid.UUID, file: UploadFile = File(...), ki
     directory = UPLOADS_DIR / str(context.business.id)
     directory.mkdir(parents=True, exist_ok=True)
     (directory / storage_key).write_bytes(content)
-    attachment = LeadAttachment(lead_id=lead_id, filename=filename, storage_key=storage_key, content_type=file.content_type or "application/octet-stream", size_bytes=len(content), kind=kind[:64])
+    attachment = LeadAttachment(lead_id=lead_id, filename=filename, storage_key=storage_key, content_type=file.content_type or "application/octet-stream", size_bytes=len(content), kind=kind[:64], actor_user_id=context.user.id if context.user else None, source="agent" if context.is_agent else "user")
     db.add(attachment); db.commit(); db.refresh(attachment)
     return attachment
 

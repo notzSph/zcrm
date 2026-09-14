@@ -217,6 +217,35 @@ class InteractionCreate(BaseModel):
     external_ref: str | None = Field(default=None, max_length=255)
 
 
+class TimelineActor(BaseModel):
+    type: str
+    id: uuid.UUID | None = None
+    label: str | None = None
+
+
+class TimelineSource(BaseModel):
+    type: str
+    label: str | None = None
+
+
+class TimelineItem(BaseModel):
+    id: uuid.UUID
+    kind: str
+    schema_version: int = 1
+    occurred_at: datetime | None
+    recorded_at: datetime
+    actor: TimelineActor
+    source: TimelineSource
+    revision: int
+    redacted: bool
+    payload: dict
+
+
+class TimelinePage(BaseModel):
+    items: list[TimelineItem]
+    next_cursor: str | None = None
+
+
 class InteractionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
