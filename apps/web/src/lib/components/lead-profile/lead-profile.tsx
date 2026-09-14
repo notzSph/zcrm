@@ -11,11 +11,13 @@ import {
   Check,
   ChevronDown,
   CircleX,
+  ExternalLink,
   FileText,
   History,
   Mail,
   MessageSquare,
   Pencil,
+  Phone,
   Plus,
   Radio,
   Send,
@@ -23,6 +25,7 @@ import {
   Target,
   Trash2,
   Trophy,
+  TrendingUp,
   UserRound,
   X,
 } from "lucide-react";
@@ -362,6 +365,11 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
                   {lead.status}
                 </em>
               </div>
+              <div className={styles.heroMeta}>
+                <span><History size={13} /> Updated {fullDate(lead.updated_at)}</span>
+                {lead.source && <span><TrendingUp size={13} /> {lead.source}</span>}
+                {lead.estimated_value != null && <span>€ {lead.estimated_value.toLocaleString()}</span>}
+              </div>
             </div>
           </div>
         </div>
@@ -591,63 +599,36 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
         </section>
       )}
       <section className={styles.profileGrid}>
-        <article className={styles.infoCard}>
-          <h2>
-            <UserRound size={16} /> Contact
-          </h2>
-          <div className={styles.contactLine}>
-            <p>{lead.contact_name || "No contact name"}</p>
-            <p className={styles.muted}>
-              {lead.contact_email ? (
-                <>
-                  <Mail size={14} /> {lead.contact_email}
-                </>
-              ) : (
-                "No email on file"
-              )}
-            </p>
+        <article className={`${styles.infoCard} ${styles.contactCard}`}>
+          <h2><UserRound size={17} /> Primary contact</h2>
+          <div className={styles.detailList}>
+            <div className={styles.detailRow}><UserRound size={15} /><span>{lead.contact_name || "Contact not assigned"}</span></div>
+            {lead.contact_email && <a className={styles.detailRow} href={`mailto:${lead.contact_email}`}><Mail size={15} /><span>{lead.contact_email}</span></a>}
+            {lead.contact_phone && <a className={styles.detailRow} href={`tel:${lead.contact_phone}`}><Phone size={15} /><span>{lead.contact_phone}</span></a>}
+            {lead.linkedin_url && <a className={styles.detailRow} href={lead.linkedin_url} target="_blank" rel="noreferrer"><ExternalLink size={15} /><span>Open LinkedIn profile</span></a>}
           </div>
-          <p className={styles.muted}>
-            {lead.contact_phone || "No phone on file"}
-          </p>
-          {lead.linkedin_url && (
-            <p className={styles.muted}>
-              <a href={lead.linkedin_url} target="_blank" rel="noreferrer">
-                LinkedIn
-              </a>
-            </p>
-          )}
         </article>
-        <article className={styles.infoCard}>
-          <h2>
-            <CalendarClock size={16} /> Next action
-          </h2>
-          <p>{lead.next_action || "No next action set."}</p>
+        <article className={`${styles.infoCard} ${styles.nextActionCard}`}>
+          <h2><CalendarClock size={17} /> Next best action</h2>
+          <p>{lead.next_action || "Set the next concrete step to keep this opportunity moving."}</p>
+          <button onClick={() => setPanel("edit")}><Pencil size={14} /> {lead.next_action ? "Update action" : "Add next action"}</button>
         </article>
         <article className={`${styles.infoCard} ${styles.descriptionCard}`}>
-          <h2>
-            <FileText size={16} /> Description
-          </h2>
-          <p>{lead.description || "No description added."}</p>
+          <h2><FileText size={17} /> Opportunity context</h2>
+          <p>{lead.description || "Add a concise brief so every teammate understands the opportunity."}</p>
+          {!lead.description && <button onClick={() => setPanel("edit")}><Pencil size={14} /> Add context</button>}
         </article>
-        <article className={styles.infoCard}>
-          <h2>
-            <Building2 size={16} /> Record
-          </h2>
-          <p className={styles.muted}>Added {fullDate(lead.created_at)}</p>
-          <p className={styles.muted}>Updated {fullDate(lead.updated_at)}</p>
-        </article>
-        <article className={styles.infoCard}>
-          <h2>Marketing</h2>
-          <p>{lead.source || "No source"}</p>
-          <p className={styles.muted}>
-            {lead.estimated_value != null
-              ? `Estimated €${lead.estimated_value.toLocaleString()}`
-              : "No value set"}
-          </p>
+        <article className={`${styles.infoCard} ${styles.recordCard}`}>
+          <h2><Building2 size={17} /> Record signals</h2>
+          <div className={styles.detailList}>
+            <div className={styles.detailRow}><TrendingUp size={15} /><span>{lead.source || "Source not recorded"}</span></div>
+            <div className={styles.detailRow}><span className={styles.euroIcon}>€</span><span>{lead.estimated_value != null ? `Estimated value ${lead.estimated_value.toLocaleString()}` : "Value not estimated"}</span></div>
+            <div className={styles.detailRow}><History size={15} /><span>Created {fullDate(lead.created_at)}</span></div>
+          </div>
         </article>
       </section>
-      <section className={styles.timeline}>
+      <div className={styles.profileWorkspace}>
+      <section className={`${styles.timeline} ${styles.followupPanel}`}>
         <div className={styles.timelineHead}>
           <div>
             <span>Follow-ups</span>
@@ -755,7 +736,7 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
           </div>
         )}
       </section>
-      <section className={styles.timeline}>
+      <section className={`${styles.timeline} ${styles.activityPanel}`}>
         <div className={styles.timelineHead}>
           <div>
             <span>Activity history</span>
@@ -795,7 +776,7 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
           </button>
         )}
       </section>
-      <section className={styles.timeline}>
+      <section className={`${styles.timeline} ${styles.interactionPanel}`}>
         <div className={styles.timelineHead}>
           <div>
             <span>Interactions</span>
@@ -830,7 +811,7 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
           </div>
         )}
       </section>
-      <section className={styles.timeline}>
+      <section className={`${styles.timeline} ${styles.attachmentPanel}`}>
         <div className={styles.timelineHead}>
           <div>
             <span>Attachments</span>
@@ -927,6 +908,7 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
           </button>
         </form>
       </section>
+      </div>
     </main>
   );
 }

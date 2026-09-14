@@ -745,3 +745,48 @@
   .drawer { --drawer-gutter: 1rem; }
   .drawerLeadRow { grid-template-columns: minmax(0, 13fr) minmax(0, 1fr) minmax(6.5rem, 6fr); }
 }
+
+/* Production UI refinement: denser information, clearer hierarchy, stronger depth. */
+.page { padding-top: clamp(1.5rem, 3vw, 2.75rem); }
+.header { margin-bottom: 1.75rem; }
+.header .brand { color: $zText; font-size: clamp(1.8rem, 2.6vw, 2.45rem); font-weight: 650; letter-spacing: -.045em; }
+.header p { max-width: 42rem; color: $zTextSoft; }
+.primary { min-height: 2.875rem; padding-inline: 1.1rem; border: 1px solid rgba($zLavender,.38); background: linear-gradient(135deg,$zViolet,#8c6fff); box-shadow: 0 .65rem 1.8rem -.85rem rgba($zViolet,.85), inset 0 1px rgba($white,.16); }
+.dashboardTop { align-items: stretch; gap: .875rem; }
+.metricCard { min-height: 7.75rem; align-content: space-between; padding: 1.15rem 1.2rem; border-radius: 1rem; }
+.metricCard > span { width: fit-content; padding: .42rem .62rem; border: 1px solid rgba($zLavender,.18); border-radius: 999px; color: $zLavender; background: rgba($zViolet,.1); font-size: .75rem; }
+.metricCard > strong { font-size: 2.25rem; line-height: 1; }
+.metricCard > small { justify-content: space-between; color: $zTextSoft; }
+.metricPipeline > span { color: $zCyan; border-color: rgba($zCyan,.2); background: rgba($zCyan,.08); }
+.metricFollowups > span { color: $zOrange; border-color: rgba($zOrange,.22); background: rgba($zOrange,.08); }
+.metricHealth > span { color: $zGreen; border-color: rgba($zGreen,.2); background: rgba($zGreen,.08); }
+.metricLeads > span { color: $zLavender; }
+.reminderStrip { border-radius: 1rem; background: linear-gradient(145deg,rgba($zBg2,.92),rgba($zBg1,.76)); }
+.reminderTitle { min-width: 12rem; background: rgba($zViolet,.055); }
+.reminder, .reminderUrgent { min-height: 3.65rem; }
+.board { gap: 1.1rem; }
+.columnHead { padding-inline: .5rem; border-bottom-color: rgba($zLavender,.24); }
+.card { border-color: rgba($zLavender,.28); background: linear-gradient(145deg,rgba($zBg2,.96),rgba($zBg1,.83)); box-shadow: 0 .8rem 2rem -1.6rem rgba(#000,.95), inset 0 1px rgba($white,.035); }
+.card:hover { border-color: rgba($zLavender,.62); box-shadow: 0 1.15rem 2.4rem -1.6rem rgba($zViolet,.7), inset 0 1px rgba($white,.06); }
+.blank { min-height: 5rem; padding: 1rem; border: 1px dashed rgba($zLavender,.18); border-radius: .85rem; background: rgba($zBg1,.32); }
+.drawerWrap { z-index: 90; }
+.drawer { --drawer-gutter: 1.5rem; width: min(100%, 38rem); height: 100dvh; padding: var(--drawer-gutter); padding-bottom: max(var(--drawer-gutter),env(safe-area-inset-bottom)); border-left-color: rgba($zLavender,.28); background: linear-gradient(165deg,rgba($zBg2,.99),rgba($zBg0,.99) 42%); box-shadow: -1.5rem 0 5rem rgba(#000,.55); }
+.drawerHead { margin: 0 0 1rem; padding: .25rem 3rem .35rem 0; }
+.drawerIdentity > span { color: $zTextMuted; font-size: .7rem; }
+.drawerLeadRow { min-height: 3rem; }
+.drawerLeadRow h2 { font-size: 1.45rem; }
+.drawerPageLink { margin: 0 0 1rem; border-color: rgba($zLavender,.24); }
+.drawerTabs { margin-bottom: 1.1rem; }
+.interactionComposer { padding: 1.15rem; border-color: rgba($zLavender,.27); background: linear-gradient(145deg,rgba($zBg3,.36),rgba($zBg1,.7)); }
+.timelineEntry { padding-block: .95rem; }
+@media (min-width: 1600px) {
+  .dashboardTop { grid-template-columns: repeat(4,minmax(10rem,1fr)) minmax(24rem,2.15fr); }
+  .dashboardTop .reminderStrip { grid-column: auto; }
+}
+@media (max-width: 700px) {
+  .page { padding: 1.25rem 1rem 2rem; }
+  .dashboardTop { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .metricCard { min-height: 8rem; padding: 1rem; }
+  .dashboardTop .reminderStrip { grid-column: 1 / -1; }
+  .drawer { --drawer-gutter: 1rem; }
+}

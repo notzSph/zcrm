@@ -159,7 +159,7 @@ export default function BusinessesPage() {
             )}
           </div>
 
-          <div className={styles.list}>
+          {businesses.length > 0 && <div className={styles.list}>
             {businesses.map((business) => (
               <article className={styles.business} key={business.id}>
                 <button className={styles.open} onClick={() => manage(business.id)}>
@@ -187,7 +187,7 @@ export default function BusinessesPage() {
                 </div>
               </article>
             ))}
-          </div>
+          </div>}
 
           {loading && <p className={styles.empty}>Loading workspaces…</p>}
           {!loading && !businesses.length && (

@@ -13,14 +13,28 @@ html, body { min-height: 100%; }
 body {
   margin: 0;
   background:
-    radial-gradient(ellipse at 85% -10%, rgba($zViolet, .2), transparent 42rem),
-    radial-gradient(ellipse at 10% 100%, rgba($zCyan, .055), transparent 32rem),
-    $zBg0;
+    radial-gradient(ellipse at 82% -8%, rgba($zViolet, .24), transparent 38rem),
+    radial-gradient(ellipse at 8% 92%, rgba($zCyan, .09), transparent 34rem),
+    linear-gradient(145deg, #141221 0%, $zBg0 46%, #0e1020 100%);
   color: $zText;
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.5;
   font-weight: 400;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  content: "";
+  pointer-events: none;
+  opacity: .18;
+  background-image:
+    linear-gradient(rgba($zLavender,.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba($zLavender,.055) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
 }
 
 ::selection { color: $zBg0; background: $zLavender; }
