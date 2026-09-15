@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { FileText, LoaderCircle, Paperclip, Send, Trash2, Upload, X } from "lucide-react";
 import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/select-menu";
@@ -126,6 +127,12 @@ export default function LeadDrawer({ lead, onClose, onUpdate, onRefresh, api = l
       if (activeLeadId.current === requestedLeadId) setFilesError("Files are temporarily unavailable. Try again.");
     } finally { if (activeLeadId.current === requestedLeadId) setLoadingFiles(false); }
   }
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, []);
 
   useEffect(() => {
     setTab("activity"); setTimeline([]); setNextCursor(null); setTimelineError(""); setPostError(""); setDetailsError("");
@@ -255,7 +262,7 @@ export default function LeadDrawer({ lead, onClose, onUpdate, onRefresh, api = l
     catch { if (activeLeadId.current === requestedLeadId) setFilesError("Could not delete the file. Try again."); }
   }
 
-  return <div className={styles.drawerWrap} role="presentation">
+  return createPortal(<div className={styles.drawerWrap} role="presentation">
     <button className={styles.scrim} aria-label="Close lead panel" onClick={onClose} />
     <aside className={styles.drawer} aria-label={`${lead.company} lead drawer`} role="dialog" aria-modal="true">
       <div className={styles.drawerHead}>
@@ -301,5 +308,5 @@ export default function LeadDrawer({ lead, onClose, onUpdate, onRefresh, api = l
         {!loadingFiles && !filesError && !attachments.length && !uploads.length && <p className={styles.noActivity}>No files attached.</p>}
       </section>}
     </aside>
-  </div>;
+  </div>, document.body);
 }

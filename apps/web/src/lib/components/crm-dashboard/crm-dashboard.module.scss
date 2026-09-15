@@ -691,13 +691,13 @@
 .drawerHead { position: relative; display: block; margin-bottom: 1rem; padding-right: 3rem; }
 .drawerHead > button { position: absolute; top: -.35rem; right: 0; }
 .drawerIdentity { display: grid; width: 100%; min-width: 0; gap: .5rem; }
-.drawerLeadRow { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr); align-items: center; width: 100%; min-width: 0; }
-.drawerLeadRow h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.drawerLeadGap { min-width: 0; }
-.drawerStatusCell { grid-column: 3; min-width: 0; }
+.drawerLeadRow { display:flex; width:100%; min-width:0; align-items:center; justify-content:space-between; gap:1rem; }
+.drawerLeadRow h2 { min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.drawerLeadGap { display:none; }
+.drawerStatusCell { min-width:8rem; flex:0 1 10rem; }
 .drawerStatusCell[aria-busy="true"] { opacity: .65; pointer-events: none; }
 .drawerStatusSelect { width: 100%; min-width: 0; }
-.drawerStatusSelect > button { width: 100%; min-width: 0; min-height: 2rem; padding: .3rem .55rem; color: $zLavender; border: 1px solid rgba($zLavender, .45); border-radius: 999px; background: rgba($zViolet, .1); box-shadow: inset 0 1px 0 rgba($white, .04); font: 600 .75rem var(--font-mono); }
+.drawerStatusSelect > button { width: 100%; min-width: 0; min-height: 2.5rem; padding: .45rem .7rem; color: $zLavender; border: 1px solid rgba($zLavender, .45); border-radius: 999px; background: rgba($zViolet, .1); box-shadow: inset 0 1px 0 rgba($white, .04); font: 600 .8125rem var(--font-mono); }
 .drawerStatusSelect > button:hover, .drawerStatusSelect > button:focus-visible { color: $zText; border-color: $zLavender; background: rgba($zViolet, .18); }
 .drawerStatusSelect > button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; letter-spacing: 0; }
 .drawerHead + .inlineError { margin: -.35rem 0 .85rem; }
@@ -742,12 +742,13 @@
 .spin { animation: drawerSpin 1s linear infinite; }
 @keyframes drawerSpin { to { transform: rotate(360deg); } }
 @media (max-width: 420px) {
-  .drawer { --drawer-gutter: 1rem; }
-  .drawerLeadRow { grid-template-columns: minmax(0, 13fr) minmax(0, 1fr) minmax(6.5rem, 6fr); }
+  .drawer { --drawer-gutter:1rem; }
+  .drawerLeadRow { align-items:flex-start; gap:.75rem; }
+  .drawerStatusCell { min-width:6.5rem; flex-basis:7.5rem; }
 }
 
 /* Production UI refinement: denser information, clearer hierarchy, stronger depth. */
-.page { padding-top: clamp(1.5rem, 3vw, 2.75rem); }
+.page { width:100%; max-width:1800px; padding:clamp(1.5rem,3vw,2.75rem) clamp(1.25rem,2.25vw,3rem) 3.5rem; }
 .header { margin-bottom: 1.75rem; }
 .header .brand { color: $zText; font-size: clamp(1.8rem, 2.6vw, 2.45rem); font-weight: 650; letter-spacing: -.045em; }
 .header p { max-width: 42rem; color: $zTextSoft; }
@@ -769,15 +770,17 @@
 .card { border-color: rgba($zLavender,.28); background: linear-gradient(145deg,rgba($zBg2,.96),rgba($zBg1,.83)); box-shadow: 0 .8rem 2rem -1.6rem rgba(#000,.95), inset 0 1px rgba($white,.035); }
 .card:hover { border-color: rgba($zLavender,.62); box-shadow: 0 1.15rem 2.4rem -1.6rem rgba($zViolet,.7), inset 0 1px rgba($white,.06); }
 .blank { min-height: 5rem; padding: 1rem; border: 1px dashed rgba($zLavender,.18); border-radius: .85rem; background: rgba($zBg1,.32); }
-.drawerWrap { z-index:90; align-items:stretch; padding:.75rem; }
-.drawer { --drawer-gutter:1.5rem; width:min(100%,38rem); height:calc(100dvh - 1.5rem); min-height:0; margin-left:auto; padding:var(--drawer-gutter); padding-bottom:max(var(--drawer-gutter),env(safe-area-inset-bottom)); border:1px solid rgba($zLavender,.28); border-radius:1.15rem; background:linear-gradient(165deg,rgba($zBg2,.99),rgba($zBg0,.99) 42%); box-shadow:-1.5rem 0 5rem rgba(#000,.55); }
-.drawerHead { margin: 0 0 1rem; padding: .25rem 3rem .35rem 0; }
-.drawerIdentity > span { color: $zTextMuted; font-size: .7rem; }
+.drawerWrap { z-index:90; align-items:stretch; padding:0; }
+.drawerWrap .scrim { background:rgba($black,.38); }
+.drawer { --drawer-gutter:clamp(1.5rem,2vw,2rem); display:flex; width:min(100%,40rem); height:100dvh; min-height:0; margin-left:auto; flex-direction:column; overflow:hidden; overscroll-behavior:contain; padding:max(var(--drawer-gutter),env(safe-area-inset-top)) var(--drawer-gutter) max(var(--drawer-gutter),env(safe-area-inset-bottom)); border:1px solid rgba($zLavender,.28); border-right:0; border-radius:1.15rem 0 0 1.15rem; background:linear-gradient(165deg,rgba($zBg2,.99),rgba($zBg0,.99) 42%); box-shadow:-1.5rem 0 5rem rgba(#000,.55); }
+.drawerHead { flex:0 0 auto; margin:0 0 1rem; padding:.25rem 3rem .35rem 0; }
+.drawerIdentity > span { color:$zTextMuted; font-size:.8125rem; line-height:1.45; }
 .drawerLeadRow { min-height: 3rem; }
 .drawerLeadRow h2 { font-size: 1.45rem; }
 .drawerPageLink { margin: 0 0 1rem; border-color: rgba($zLavender,.24); }
-.drawerTabs { margin-bottom: 1.1rem; }
-.interactionComposer { padding: 1.15rem; border-color: rgba($zLavender,.27); background: linear-gradient(145deg,rgba($zBg3,.36),rgba($zBg1,.7)); }
+.drawerTabs { flex:0 0 auto; margin-bottom:1.1rem; }
+.drawerTabPanel { min-height:0; flex:1 1 auto; overflow-y:auto; overscroll-behavior:contain; padding-right:.35rem; scrollbar-gutter:stable; }
+.interactionComposer { padding:1.15rem; border-color:rgba($zLavender,.27); background:linear-gradient(145deg,rgba($zBg3,.36),rgba($zBg1,.7)); }
 .timelineEntry { padding-block: .95rem; }
 @media (min-width: 1600px) {
   .dashboardTop { grid-template-columns: repeat(4,minmax(10rem,1fr)) minmax(24rem,2.15fr); }
@@ -788,8 +791,8 @@
   .dashboardTop { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .metricCard { min-height: 8rem; padding: 1rem; }
   .dashboardTop .reminderStrip { grid-column: 1 / -1; }
-  .drawerWrap { padding:.5rem; }
-  .drawer { --drawer-gutter:1rem; width:100%; height:calc(100dvh - 1rem); }
+  .drawerWrap { padding:0; }
+  .drawer { --drawer-gutter:1rem; width:100%; height:100dvh; border:0; border-radius:0; }
 }
 
 /* Live dashboard analytics, rendered only from real CRM data. */
