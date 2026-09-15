@@ -61,6 +61,7 @@ Useful endpoints:
 Agent operations use `X-API-Key` and `X-Business-ID`:
 
 - `GET /api/v1/agent/capabilities`
+- `POST /api/v1/agent/session` — exchange the unrestricted `JAYZOO_API_KEY` for a short-lived owner session; send the returned token as `Cookie: zcrm_session=...` when calling session-only routes
 - `PUT /api/v1/agent/leads` — upsert by `external_ref`
 - `PATCH /api/v1/agent/leads/{lead_id}/status`
 - `POST /api/v1/agent/leads/{lead_id}/interactions` — deduplicates by `external_ref`
