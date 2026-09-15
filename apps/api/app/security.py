@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import logging
 import os
 import secrets
 from dataclasses import dataclass
@@ -17,6 +18,8 @@ from .models import Business, BusinessMembership, User, UserSession
 
 SESSION_COOKIE_NAME = "zcrm_session"
 SESSION_LIFETIME_DAYS = 30
+AGENT_SESSION_LIFETIME_HOURS = 12
+logger = logging.getLogger(__name__)
 password_hasher = PasswordHasher()
 
 def agent_business_scope(x_api_key: str | None) -> uuid.UUID | None | bool:
@@ -57,6 +60,19 @@ def create_session(db: Session, user: User) -> str:
     raw_token = secrets.token_urlsafe(32)
     db.add(UserSession(token_hash=hash_token(raw_token), user_id=user.id, expires_at=datetime.now(UTC) + timedelta(days=SESSION_LIFETIME_DAYS)))
     db.commit()
+    return raw_token
+
+def create_agent_session(db: Session, user: User, business_id: uuid.UUID) -> str:
+    """Mint a short-lived normal session for the owner of an agent-selected business."""
+    raw_token = secrets.token_urlsafe(32)
+    db.add(UserSession(
+        token_hash=hash_token(raw_token),
+        user_id=user.id,
+        active_business_id=business_id,
+        expires_at=datetime.now(UTC) + timedelta(hours=AGENT_SESSION_LIFETIME_HOURS),
+    ))
+    db.commit()
+    logger.info("agent session minted for business=%s user=%s", business_id, user.id)
     return raw_token
 
 def invalidate_session(db: Session, raw_token: str) -> None:
@@ -123,4 +139,18 @@ def require_agent_context(x_api_key: str | None = Header(default=None), x_busine
         raise HTTPException(status_code=403, detail="API key is not authorized for this business")
     business = db.get(Business, business_id)
     if not business: raise HTTPException(status_code=404, detail="Business not found")
+    return RequestContext(business=business, user=None, is_agent=True)
+
+def require_unrestricted_agent(x_api_key: str | None = Header(default=None), x_business_id: str | None = Header(default=None), db: Session = Depends(get_db)) -> RequestContext:
+    """Require the unrestricted JAYZOO service key for session exchange."""
+    jayzoo_key = os.getenv("JAYZOO_API_KEY", "")
+    if not x_api_key or not jayzoo_key or not hmac.compare_digest(x_api_key, jayzoo_key):
+        raise HTTPException(status_code=401, detail="Unrestricted agent key required")
+    try:
+        business_id = uuid.UUID(x_business_id or "")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="X-Business-ID is required") from exc
+    business = db.get(Business, business_id)
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
     return RequestContext(business=business, user=None, is_agent=True)

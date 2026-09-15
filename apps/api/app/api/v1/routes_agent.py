@@ -1,11 +1,13 @@
+import hashlib
 import uuid
 from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.domain_models import BusinessMembership, Interaction, Lead, Reminder, User
-from app.domain_schemas import InteractionCreate, InteractionOut, LeadCreate, LeadOut, ReminderCreate, ReminderOut, StatusUpdate
-from app.security import RequestContext, get_db, require_agent_context
+from app.domain_models import BusinessMembership, Interaction, Lead, Reminder, User, UserSession
+from app.domain_schemas import InteractionCreate, InteractionOut, LeadCreate, LeadOut, LoginOut, ReminderCreate, ReminderOut, StatusUpdate
+from app.security import RequestContext, create_agent_session, get_db, require_agent_context, require_unrestricted_agent
+from app.api.v1.routes_auth import serialize_user
 from app.api.v1.routes_leads import get_lead_or_404
 from app.caldav import CalDAVError, sync_reminder
 
@@ -13,7 +15,21 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 
 @router.get("/capabilities")
 def capabilities(_: RequestContext = Depends(require_agent_context)) -> dict[str, list[str]]:
-    return {"operations": ["lead_upsert", "lead_status", "interaction_create", "reminder_create", "attachment_upload"], "headers": ["X-API-Key", "X-Business-ID", "X-Calendar-User-Email"]}
+    return {"operations": ["lead_upsert", "lead_status", "interaction_create", "reminder_create", "attachment_upload", "session_exchange"], "headers": ["X-API-Key", "X-Business-ID", "X-Calendar-User-Email"]}
+
+@router.post("/session", response_model=LoginOut)
+def exchange_session(context: RequestContext = Depends(require_unrestricted_agent), db: Session = Depends(get_db)) -> LoginOut:
+    """Exchange the unrestricted service key for a short-lived owner session."""
+    if not context.business.owner_id:
+        raise HTTPException(status_code=409, detail="Business has no owner")
+    owner = db.get(User, context.business.owner_id)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Business owner not found")
+    token = create_agent_session(db, owner, context.business.id)
+    session = db.scalar(select(UserSession).where(UserSession.token_hash == hashlib.sha256(token.encode()).hexdigest()))
+    if not session:
+        raise HTTPException(status_code=500, detail="Agent session could not be created")
+    return LoginOut(session_token=token, user=serialize_user(db, owner, session))
 
 @router.put("/leads", response_model=LeadOut)
 def upsert_lead(payload: LeadCreate, context: RequestContext = Depends(require_agent_context), db: Session = Depends(get_db)) -> Lead:
