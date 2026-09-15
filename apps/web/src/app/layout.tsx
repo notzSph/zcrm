@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { JetBrains_Mono, Manrope } from "next/font/google";
 import AppShell from "@/lib/components/app-shell/app-shell";
@@ -32,6 +32,19 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500", "600"],
 export const metadata: Metadata = {
   title: "zCRM",
   description: "Simple pipeline and follow-up tracking.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icons/zcrm-icon.svg", type: "image/svg+xml" },
+      { url: "/icons/zcrm-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/zcrm-180.png", sizes: "180x180", type: "image/png" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#6d45d9",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

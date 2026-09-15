@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>zCRM</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9b7bff"/>
+      <stop offset="0.52" stop-color="#6d45d9"/>
+      <stop offset="1" stop-color="#3b227f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M132 150h248l-22 54-137 104h153l-24 54H122l23-54 136-104H109z" fill="#fff"/>
+  <circle cx="384" cy="128" r="18" fill="#d9ccff"/>
+</svg>
