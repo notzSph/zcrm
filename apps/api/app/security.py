@@ -26,7 +26,10 @@ def agent_business_scope(x_api_key: str | None) -> uuid.UUID | None | bool:
     """Return None for unrestricted JayZoo access, a UUID for scoped CAIO access, or False."""
     jayzoo_key = os.getenv("JAYZOO_API_KEY", "")
     if x_api_key and jayzoo_key and hmac.compare_digest(x_api_key, jayzoo_key):
-        return None
+        try:
+            return uuid.UUID(os.getenv("JAYZOO_BUSINESS_ID", ""))
+        except ValueError as exc:
+            raise HTTPException(status_code=500, detail="JAYZOO_BUSINESS_ID is not configured") from exc
     caio_key = os.getenv("CAIO_API_KEY", "")
     if x_api_key and caio_key and hmac.compare_digest(x_api_key, caio_key):
         try:
