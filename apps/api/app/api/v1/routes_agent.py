@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.domain_models import BusinessMembership, Interaction, Lead, Reminder, User, UserSession
-from app.domain_schemas import InteractionCreate, InteractionOut, LeadCreate, LeadOut, LoginOut, ReminderCreate, ReminderOut, StatusUpdate
+from app.domain_schemas import AgentLeadBatchCreate, AgentLeadBatchOut, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LoginOut, ReminderCreate, ReminderOut, StatusUpdate
 from app.security import RequestContext, create_agent_session, get_db, require_agent_context, require_unrestricted_agent
 from app.api.v1.routes_auth import serialize_user
 from app.api.v1.routes_leads import get_lead_or_404
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 
 @router.get("/capabilities")
 def capabilities(_: RequestContext = Depends(require_agent_context)) -> dict[str, list[str]]:
-    return {"operations": ["lead_upsert", "lead_status", "interaction_create", "reminder_create", "attachment_upload", "session_exchange"], "headers": ["X-API-Key", "X-Business-ID", "X-Calendar-User-Email"]}
+    return {"operations": ["lead_upsert", "lead_batch_upsert", "lead_status", "interaction_create", "reminder_create", "attachment_upload", "session_exchange"], "headers": ["X-API-Key", "X-Business-ID", "X-Calendar-User-Email"]}
 
 @router.post("/session", response_model=LoginOut)
 def exchange_session(context: RequestContext = Depends(require_unrestricted_agent), db: Session = Depends(get_db)) -> LoginOut:
@@ -41,6 +41,29 @@ def upsert_lead(payload: LeadCreate, context: RequestContext = Depends(require_a
     else:
         for key, value in payload.model_dump(exclude_unset=True).items(): setattr(lead, key, value)
     db.commit(); return get_lead_or_404(db, lead.id, context.business.id)
+
+@router.put("/outreach/leads", response_model=AgentLeadBatchOut)
+def batch_upsert_leads(payload: AgentLeadBatchCreate, context: RequestContext = Depends(require_agent_context), db: Session = Depends(get_db)) -> dict:
+    created = 0
+    updated = 0
+    leads = []
+    for item in payload.leads:
+        lead = None
+        if item.external_ref:
+            lead = db.scalar(select(Lead).where(Lead.business_id == context.business.id, Lead.external_ref == item.external_ref))
+        if lead is None:
+            lead = Lead(business_id=context.business.id, **item.model_dump())
+            db.add(lead)
+            created += 1
+        else:
+            for key, value in item.model_dump(exclude_unset=True).items():
+                setattr(lead, key, value)
+            updated += 1
+        leads.append(lead)
+    db.commit()
+    for lead in leads:
+        db.refresh(lead)
+    return {"count": len(leads), "created": created, "updated": updated, "leads": leads}
 
 @router.patch("/leads/{lead_id}/status", response_model=LeadOut)
 def update_status(lead_id: uuid.UUID, payload: StatusUpdate, context: RequestContext = Depends(require_agent_context), db: Session = Depends(get_db)) -> Lead:
