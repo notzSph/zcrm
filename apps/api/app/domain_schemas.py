@@ -168,6 +168,10 @@ class LeadCreate(BaseModel):
     next_action: str | None = None
 
 
+class AgentLeadBatchCreate(BaseModel):
+    leads: list[LeadCreate] = Field(min_length=1, max_length=100)
+
+
 class LeadUpdate(BaseModel):
     company: str | None = Field(default=None, min_length=1, max_length=180)
     contact_name: str | None = Field(default=None, max_length=180)
@@ -212,6 +216,13 @@ class LeadOut(BaseModel):
     activities: list[ActivityOut] = []
     interactions: list["InteractionOut"] = []
     attachments: list["AttachmentOut"] = []
+
+
+class AgentLeadBatchOut(BaseModel):
+    count: int
+    created: int
+    updated: int
+    leads: list[LeadOut]
 
 
 class StatusUpdate(BaseModel):
