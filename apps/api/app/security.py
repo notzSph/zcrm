@@ -22,20 +22,53 @@ AGENT_SESSION_LIFETIME_HOURS = 12
 logger = logging.getLogger(__name__)
 password_hasher = PasswordHasher()
 
-def agent_business_scope(x_api_key: str | None) -> uuid.UUID | None | bool:
-    """Return None for unrestricted JayZoo access, a UUID for scoped CAIO access, or False."""
+def _configured_business_scope(
+    variable_name: str,
+    fallback_variable_name: str | None = None,
+) -> uuid.UUID | frozenset[uuid.UUID]:
+    configured = os.getenv(variable_name, "").strip()
+    if not configured and fallback_variable_name:
+        configured = os.getenv(fallback_variable_name, "").strip()
+    if not configured:
+        raise HTTPException(status_code=500, detail=f"{variable_name} is not configured")
+
+    try:
+        business_ids = frozenset(
+            uuid.UUID(value.strip())
+            for value in configured.split(",")
+            if value.strip()
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"{variable_name} contains an invalid business ID",
+        ) from exc
+    if not business_ids:
+        raise HTTPException(status_code=500, detail=f"{variable_name} is not configured")
+    return next(iter(business_ids)) if len(business_ids) == 1 else business_ids
+
+
+def _business_is_allowed(
+    business_id: uuid.UUID,
+    scope: uuid.UUID | frozenset[uuid.UUID] | None,
+) -> bool:
+    if scope is None:
+        return True
+    if isinstance(scope, frozenset):
+        return business_id in scope
+    return business_id == scope
+
+
+def agent_business_scope(
+    x_api_key: str | None,
+) -> uuid.UUID | frozenset[uuid.UUID] | None | bool:
+    """Return the allowed business ID(s), or False for an unknown agent key."""
     jayzoo_key = os.getenv("JAYZOO_API_KEY", "")
     if x_api_key and jayzoo_key and hmac.compare_digest(x_api_key, jayzoo_key):
-        try:
-            return uuid.UUID(os.getenv("JAYZOO_BUSINESS_ID", ""))
-        except ValueError as exc:
-            raise HTTPException(status_code=500, detail="JAYZOO_BUSINESS_ID is not configured") from exc
+        return _configured_business_scope("JAYZOO_BUSINESS_IDS", "JAYZOO_BUSINESS_ID")
     caio_key = os.getenv("CAIO_API_KEY", "")
     if x_api_key and caio_key and hmac.compare_digest(x_api_key, caio_key):
-        try:
-            return uuid.UUID(os.getenv("CAIO_BUSINESS_ID", ""))
-        except ValueError as exc:
-            raise HTTPException(status_code=500, detail="CAIO_BUSINESS_ID is not configured") from exc
+        return _configured_business_scope("CAIO_BUSINESS_ID")
     return False
 
 def hash_password(password: str) -> str:
@@ -115,7 +148,10 @@ def require_context(request: Request, x_api_key: str | None = Header(default=Non
             business_id = uuid.UUID(x_business_id or "")
         except ValueError as exc:
             raise HTTPException(status_code=400, detail="X-Business-ID is required for agent access") from exc
-        if agent_scope is not None and business_id != agent_scope:
+        if not _business_is_allowed(
+            business_id,
+            agent_scope if agent_scope is not False else None,
+        ):
             raise HTTPException(status_code=403, detail="API key is not authorized for this business")
         business = db.get(Business, business_id)
         if not business:
@@ -138,7 +174,10 @@ def require_agent_context(x_api_key: str | None = Header(default=None), x_busine
         raise HTTPException(status_code=401, detail="Valid X-API-Key required")
     try: business_id = uuid.UUID(x_business_id or "")
     except ValueError as exc: raise HTTPException(status_code=400, detail="X-Business-ID is required") from exc
-    if agent_scope is not None and business_id != agent_scope:
+    if not _business_is_allowed(
+        business_id,
+        agent_scope if agent_scope is not False else None,
+    ):
         raise HTTPException(status_code=403, detail="API key is not authorized for this business")
     business = db.get(Business, business_id)
     if not business: raise HTTPException(status_code=404, detail="Business not found")

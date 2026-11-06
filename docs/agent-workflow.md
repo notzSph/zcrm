@@ -1,6 +1,7 @@
 # Discord → zCRM workflow
 
-JayZoo can operate the CRM directly through the agent API. Every request must include:
+JayZoo can operate the CRM directly through the agent API. Configure `JAYZOO_BUSINESS_IDS`
+as a comma-separated allowlist of business UUIDs, then every request must include:
 
 ```text
 X-API-Key: <JAYZOO_API_KEY>
@@ -9,6 +10,9 @@ X-Business-ID: <business UUID>
 
 Use the business UUID for the active marketing workspace. Keep the Discord message ID as
 `external_ref`; this makes retries safe.
+
+`JAYZOO_BUSINESS_ID` remains supported for deployments with one workspace. The agent key
+must not be used with a business UUID outside the configured allowlist.
 
 ## Common actions
 
