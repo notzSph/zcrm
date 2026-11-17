@@ -19,6 +19,7 @@ import {
   Plus,
   Radio,
   Send,
+  Sparkles,
   Sprout,
   Target,
   Trash2,
@@ -30,6 +31,20 @@ import SelectMenu, { type SelectMenuOption } from "@/lib/components/select-menu/
 import { ActivityType, LeadStatus, type Lead, type Reminder } from "@/lib/types";
 import { reminderKindOptions } from "@/lib/options";
 import styles from "@/lib/components/lead-pages/lead-pages.module.scss";
+
+type LeadBriefing = {
+  summary: string;
+  key_points: Array<{
+    text: string;
+    citations: Array<{
+      title: string | null;
+      source_uri: string;
+      locator: { interaction_id?: string } | null;
+    }>;
+  }>;
+  missing_information: string[];
+  suggested_follow_up: string | null;
+};
 
 const fullDate = (value: string) =>
   new Intl.DateTimeFormat("en", {
@@ -84,6 +99,9 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
     null,
   );
   const [error, setError] = useState("");
+  const [briefing, setBriefing] = useState<LeadBriefing | null>(null);
+  const [briefingLoading, setBriefingLoading] = useState(false);
+  const [briefingFocus, setBriefingFocus] = useState("");
   const loadLead = useCallback(async () => {
     const response = await fetch(`/api/leads/${leadId}`, { cache: "no-store" });
     if (response.status === 404) {
@@ -134,6 +152,32 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
   async function refreshPage() {
     await loadLead();
     router.refresh();
+  }
+  async function generateBriefing() {
+    if (!lead || briefingLoading) return;
+    setBriefingLoading(true);
+    setError("");
+    try {
+      const focus = briefingFocus.trim();
+      const query = focus ? `?query=${encodeURIComponent(focus)}` : "";
+      const response = await fetch(`/api/leads/${lead.id}/briefing${query}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        setError(
+          response.status === 503
+            ? "Lead briefing is not configured or evidence is unavailable."
+            : "Could not generate the lead briefing.",
+        );
+        return;
+      }
+      const result = (await response.json()) as { briefing: LeadBriefing };
+      setBriefing(result.briefing);
+    } catch {
+      setError("Could not reach the lead briefing service.");
+    } finally {
+      setBriefingLoading(false);
+    }
   }
 
   async function saveLead(event: FormEvent<HTMLFormElement>) {
@@ -366,6 +410,25 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
           </div>
         </div>
         <div className={styles.profileActions}>
+          <label className={styles.searchField}>
+            <span>Briefing focus</span>
+            <input
+              type="text"
+              maxLength={2000}
+              placeholder="Risks, recent activity, next follow-up…"
+              value={briefingFocus}
+              onChange={(event) => setBriefingFocus(event.target.value)}
+              disabled={briefingLoading}
+            />
+          </label>
+          <button
+            className={styles.secondaryButton}
+            onClick={generateBriefing}
+            disabled={briefingLoading}
+          >
+            <Sparkles size={15} />
+            {briefingLoading ? "Generating…" : "Generate briefing"}
+          </button>
           <button
             className={styles.secondaryButton}
             onClick={() =>
@@ -396,6 +459,39 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
           </button>
         </div>
       </header>
+      {briefing && (
+        <section className={styles.briefing} aria-live="polite">
+          <h2>Lead briefing</h2>
+          <p>{briefing.summary}</p>
+          {briefing.key_points.map((point, index) => (
+            <div className={styles.briefingPoint} key={`${index}-${point.text}`}>
+              <p>{point.text}</p>
+              {point.citations.map((citation) => (
+                <a
+                  key={citation.source_uri}
+                  href={
+                    citation.locator?.interaction_id
+                      ? `/leads/${lead.id}#interaction-${citation.locator.interaction_id}`
+                      : `/leads/${lead.id}`
+                  }
+                >
+                  {citation.title || citation.source_uri}
+                </a>
+              ))}
+            </div>
+          ))}
+          {briefing.missing_information.length > 0 && (
+            <p className={styles.muted}>
+              Missing: {briefing.missing_information.join("; ")}
+            </p>
+          )}
+          {briefing.suggested_follow_up && (
+            <p>
+              <strong>Suggested follow-up:</strong> {briefing.suggested_follow_up}
+            </p>
+          )}
+        </section>
+      )}
       {error && <p className={styles.formError}>{error}</p>}
       {panel === "edit" && (
         <section className={styles.actionPanel}>
@@ -808,7 +904,11 @@ export default function LeadProfile({ leadId }: { leadId: string }) {
         </div>
         {lead.interactions.length ? (
           lead.interactions.map((interaction) => (
-            <div className={styles.timelineRow} key={interaction.id}>
+            <div
+              className={styles.timelineRow}
+              id={`interaction-${interaction.id}`}
+              key={interaction.id}
+            >
               <span className={styles.dot} />
               <div>
                 <strong>

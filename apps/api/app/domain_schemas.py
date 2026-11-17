@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_serializer, model_validator
 
 from .domain_models import ActivityType, InteractionType, LeadStatus, ReminderKind
 
@@ -218,6 +218,18 @@ class LeadOut(BaseModel):
     attachments: list["AttachmentOut"] = []
 
 
+class BriefingPoint(BaseModel):
+    text: str = Field(min_length=1, max_length=1000)
+    evidence_chunk_ids: list[str] = Field(default_factory=list, max_length=8)
+
+
+class LeadBriefingDraft(BaseModel):
+    summary: str = Field(min_length=1, max_length=2000)
+    key_points: list[BriefingPoint] = Field(default_factory=list, max_length=8)
+    missing_information: list[str] = Field(default_factory=list, max_length=8)
+    suggested_follow_up: str | None = Field(default=None, max_length=1000)
+
+
 class AgentLeadBatchOut(BaseModel):
     count: int
     created: int
@@ -235,6 +247,18 @@ class InteractionCreate(BaseModel):
     body: str = Field(min_length=1, max_length=10000)
     occurred_at: datetime | None = None
     external_ref: str | None = Field(default=None, max_length=255)
+
+
+class InteractionUpdate(BaseModel):
+    interaction_type: InteractionType | None = None
+    body: str | None = Field(default=None, min_length=1, max_length=19900)
+    occurred_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def reject_explicit_nulls(self):
+        if any(getattr(self, field_name) is None for field_name in self.model_fields_set):
+            raise ValueError("PATCH fields cannot be null")
+        return self
 
 
 class TimelineActor(BaseModel):
@@ -275,6 +299,14 @@ class InteractionOut(BaseModel):
     occurred_at: datetime
     external_ref: str | None
     created_at: datetime
+    redacted: bool = False
+
+    @model_serializer(mode="wrap")
+    def redact_body(self, handler):
+        result = handler(self)
+        if result.get("redacted"):
+            result["body"] = ""
+        return result
 
 
 class AttachmentOut(BaseModel):

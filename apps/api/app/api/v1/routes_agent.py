@@ -9,6 +9,7 @@ from app.domain_schemas import AgentLeadBatchCreate, AgentLeadBatchOut, Interact
 from app.security import RequestContext, create_agent_session, get_db, require_agent_context, require_unrestricted_agent
 from app.api.v1.routes_auth import serialize_user
 from app.api.v1.routes_leads import get_lead_or_404
+from app.integrations.zrag_outbox import enqueue_interaction_upsert
 from app.caldav import CalDAVError, sync_reminder
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -73,12 +74,14 @@ def update_status(lead_id: uuid.UUID, payload: StatusUpdate, context: RequestCon
 
 @router.post("/leads/{lead_id}/interactions", response_model=InteractionOut, status_code=201)
 def create_interaction(lead_id: uuid.UUID, payload: InteractionCreate, context: RequestContext = Depends(require_agent_context), db: Session = Depends(get_db)) -> Interaction:
-    get_lead_or_404(db, lead_id, context.business.id)
+    lead = get_lead_or_404(db, lead_id, context.business.id)
     if payload.external_ref:
         existing = db.scalar(select(Interaction).join(Lead).where(Interaction.lead_id == lead_id, Interaction.external_ref == payload.external_ref, Lead.business_id == context.business.id))
         if existing: return existing
     interaction = Interaction(lead_id=lead_id, interaction_type=payload.interaction_type, body=payload.body.strip(), occurred_at=payload.occurred_at or datetime.now(UTC), external_ref=payload.external_ref)
-    db.add(interaction); db.commit(); db.refresh(interaction); return interaction
+    db.add(interaction); db.flush()
+    db.add(enqueue_interaction_upsert(lead, interaction))
+    db.commit(); db.refresh(interaction); return interaction
 
 @router.post("/leads/{lead_id}/reminders", response_model=ReminderOut, status_code=201)
 def create_reminder(lead_id: uuid.UUID, payload: ReminderCreate, x_calendar_user_email: str | None = Header(default=None, alias="X-Calendar-User-Email"), context: RequestContext = Depends(require_agent_context), db: Session = Depends(get_db)) -> Reminder:

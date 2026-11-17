@@ -121,6 +121,37 @@ class ApiIdempotency(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class ZragOutbox(Base):
+    __tablename__ = "zrag_outbox"
+    __table_args__ = (
+        UniqueConstraint(
+            "interaction_id",
+            "source_version",
+            "operation",
+            name="ux_zrag_outbox_interaction_version_operation",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    business_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    lead_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    interaction_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    source_version: Mapped[int] = mapped_column(nullable=False)
+    operation: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_uri: Mapped[str] = mapped_column(String(1024), nullable=False)
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    media_type: Mapped[str] = mapped_column(String(160), nullable=False)
+    content: Mapped[str | None] = mapped_column(Text)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="pending", server_default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(default=0, server_default="0", nullable=False)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class LeadUpload(Base):
     __tablename__ = "lead_uploads"
 

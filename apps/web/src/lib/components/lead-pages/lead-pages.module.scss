@@ -6,6 +6,36 @@
   margin: 0 auto;
   padding: 32px clamp(18px, 4vw, 54px) 54px;
 }
+.briefing {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid $zLine;
+  border-radius: 12px;
+  background: rgba($zBg1, 0.7);
+}
+.briefing h2 {
+  color: $zText;
+  font-size: 1.1rem;
+}
+.briefing p {
+  color: $zTextSoft;
+  line-height: 1.55;
+}
+.briefingPoint {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-left: 12px;
+  border-left: 2px solid $zViolet;
+}
+.briefingPoint a {
+  width: fit-content;
+  color: $zLavender;
+  font-size: 0.8125rem;
+}
 .header {
   display: flex;
   justify-content: space-between;

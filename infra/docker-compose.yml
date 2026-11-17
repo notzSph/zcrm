@@ -4,7 +4,6 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
-    env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -27,11 +26,20 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3200}
+      Z_RAG_API_URL: ${Z_RAG_API_URL:-http://zrag-retrieval:8200}
+      Z_RAG_API_TOKEN: ${Z_RAG_API_TOKEN:-}
+      Z_RAG_SCOPE_SECRET: ${Z_RAG_SCOPE_SECRET:-}
+      Z_RAG_CRM_COLLECTION: ${Z_RAG_CRM_COLLECTION:-crm}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - zcrm-uploads:/app/uploads
+    networks:
+      - default
+      - jayzoo
     ports:
       - "127.0.0.1:8200:8000"
     healthcheck:
@@ -47,9 +55,9 @@ services:
       dockerfile: infra/Dockerfile
       target: web
     restart: unless-stopped
-    env_file: .env
     environment:
       API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-zCRM}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
     depends_on:
       api:
@@ -57,6 +65,31 @@ services:
     ports:
       - "127.0.0.1:3200:3000"
 
+  sync-worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: api
+    restart: unless-stopped
+    env_file: zrag-worker.env
+    command: ["python", "-m", "app.integrations.zrag_worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - default
+      - jayzoo
+    cpus: 0.25
+    mem_limit: 256m
+    pids_limit: 32
+
 volumes:
   zcrm-postgres:
   zcrm-uploads:
+
+networks:
+  jayzoo:
+    name: jayzoo_default
+    external: true

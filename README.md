@@ -125,3 +125,43 @@ deleting a reminder removes its synced event.
 
 After restarting the stack, verify discovery with `GET /api/calendar/caldav`
 while logged in. A successful response includes the discovered calendar URL.
+# Lead evidence retrieval configuration
+
+The API exposes authenticated, read-only `GET /api/v1/leads/{lead_id}/evidence`
+and `GET /api/v1/leads/{lead_id}/briefing` routes. Both check lead access in
+zCRM and request evidence from zRAG with a server-derived business and lead
+scope. The briefing adds live CRM fields and uses LangChain's structured
+output with no tools or write access. It returns citations selected only from
+the retrieved zRAG chunks; model-generated citation IDs are checked against
+that set.
+
+Configure these API environment variables to enable it:
+
+- `Z_RAG_API_URL`: private base URL of the zRAG API.
+- `Z_RAG_API_TOKEN`: the zRAG API token.
+- `Z_RAG_SCOPE_SECRET`: the shared scope-signing secret. It must match the
+  secret mounted in zRAG at `Z_RAG_SCOPE_SECRET_FILE`.
+- `Z_RAG_CRM_COLLECTION`: collection slug containing CRM evidence, default
+  `crm`.
+
+To enable model briefings, set `OPENAI_API_KEY` and optionally `OPENAI_MODEL`
+in the API's `infra/.env`. Compose passes these variables only to the API
+container. Without a key, evidence retrieval still works and the briefing route
+returns `503`. Calling the briefing route sends the current lead fields and its
+scoped retrieved evidence to the configured model provider. Do not use this
+integration with records whose handling policy forbids that transfer.
+
+The sync worker uses its own `infra/zrag-worker.env` file. Create it from
+`infra/zrag-worker.env.example`; keep the writer token there so the CRM API
+container never receives it. The CRM API writes interaction changes to a
+transactional outbox. A separate `sync-worker` retries zRAG upserts and deletion
+tombstones. To index existing
+interactions after deployment, run:
+
+```bash
+sudo docker compose -f infra/docker-compose.yml run --rm sync-worker \
+  python -m app.integrations.zrag_worker --backfill --once
+```
+
+New and edited interaction records sync automatically. Lead and business
+deletions enqueue tombstones.

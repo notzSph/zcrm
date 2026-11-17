@@ -4,6 +4,8 @@ import hmac
 import json
 from datetime import UTC, datetime, time
 import os
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Literal
 import uuid
@@ -13,7 +15,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 from app.caldav import CalDAVError, delete_event, sync_reminder
 from app.domain_models import Activity, ActivityType, ApiIdempotency, BusinessMembership, Interaction, InteractionType, Lead, LeadAttachment, LeadStatus, LeadUpload, Reminder, ReminderKind, User
-from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate, StatusTransitionCreate, TimelineActor, TimelineItem, TimelinePage, TimelineSource, UploadInitiate, UploadOut
+from app.domain_schemas import ActivityOut, AttachmentOut, AttachmentUpdate, InteractionCreate, InteractionOut, InteractionUpdate, LeadCreate, LeadOut, LeadUpdate, ReminderCreate, ReminderOut, ReminderUpdate, StatusTransitionCreate, TimelineActor, TimelineItem, TimelinePage, TimelineSource, UploadInitiate, UploadOut
+from app.integrations.zrag_outbox import enqueue_interaction_delete, enqueue_interaction_upsert
+from app.integrations.lead_briefing import generate_lead_briefing
 from app.core.config import settings
 from app.security import RequestContext, get_db, require_context
 
@@ -84,6 +88,164 @@ def create_lead(payload: LeadCreate, context: RequestContext = Depends(require_c
 @router.get("/leads/{lead_id}", response_model=LeadOut)
 def get_lead(lead_id: uuid.UUID, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Lead: return get_lead_or_404(db, lead_id, context.business.id)
 
+
+@router.get("/leads/{lead_id}/evidence")
+def lead_evidence(
+    lead_id: uuid.UUID,
+    query: str | None = Query(default=None, min_length=1, max_length=2000),
+    context: RequestContext = Depends(require_context),
+    db: Session = Depends(get_db),
+) -> dict:
+    lead = get_lead_or_404(db, lead_id, context.business.id)
+    base_url = os.getenv("Z_RAG_API_URL", "").rstrip("/")
+    token = os.getenv("Z_RAG_API_TOKEN", "")
+    scope_secret = os.getenv("Z_RAG_SCOPE_SECRET", "")
+    collection = os.getenv("Z_RAG_CRM_COLLECTION", "crm")
+    if not all((base_url, token, scope_secret)):
+        raise HTTPException(status_code=503, detail="CRM evidence retrieval is not configured")
+
+    search_query = query or " ".join(
+        value for value in (lead.company, lead.contact_name, lead.description or "") if value
+    )
+    canonical_scope = f"{context.business.id}\nlead\n{lead.id}"
+    scope_signature = hmac.new(
+        scope_secret.encode(), canonical_scope.encode(), hashlib.sha256
+    ).hexdigest()
+    payload = json.dumps(
+        {
+            "query": search_query,
+            "collection": collection,
+            "limit": 5,
+            "business_id": str(context.business.id),
+            "entity_type": "lead",
+            "entity_id": str(lead.id),
+        }
+    ).encode()
+    request = urllib.request.Request(
+        f"{base_url}/v1/crm/search",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "X-Zrag-Token": token,
+            "X-Zrag-Scope-Signature": scope_signature,
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            evidence = json.loads(response.read())
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=503, detail="Evidence retrieval is unavailable") from exc
+
+    current_evidence = []
+    results = evidence.get("results", []) if isinstance(evidence, dict) else []
+    for item in results if isinstance(results, list) else []:
+        if not isinstance(item, dict):
+            continue
+        source = item.get("source") or {}
+        if not isinstance(source, dict):
+            continue
+        locator = item.get("locator") or source.get("locator") or {}
+        metadata = item.get("metadata") or source.get("metadata") or {}
+        if not isinstance(locator, dict) or not isinstance(metadata, dict):
+            continue
+        try:
+            interaction_id = uuid.UUID(str(locator.get("interaction_id")))
+            source_version = int(
+                item.get(
+                    "source_version",
+                    source.get(
+                        "source_version",
+                        locator.get(
+                            "source_version",
+                            metadata.get("source_version", source.get("revision")),
+                        ),
+                    ),
+                )
+            )
+        except (AttributeError, TypeError, ValueError):
+            continue
+        interaction = db.scalar(
+            select(Interaction)
+            .join(Lead, Interaction.lead_id == Lead.id)
+            .where(
+                Interaction.id == interaction_id,
+                Interaction.lead_id == lead.id,
+                Lead.business_id == context.business.id,
+            )
+        )
+        expected_uri = (
+            f"zcrm://business/{context.business.id}/lead/{lead.id}/"
+            f"interaction/{interaction_id}"
+        )
+        if (
+            interaction is None
+            or interaction.redacted
+            or interaction.revision != source_version
+            or source.get("uri") != expected_uri
+        ):
+            continue
+        current_evidence.append(item)
+
+    return {
+        "lead": {
+            "id": str(lead.id),
+            "business_id": str(lead.business_id),
+            "company": lead.company,
+            "contact_name": lead.contact_name,
+            "status": lead.status.value,
+            "next_action": lead.next_action,
+            "updated_at": lead.updated_at.isoformat(),
+        },
+        "evidence": current_evidence,
+    }
+
+
+@router.get("/leads/{lead_id}/briefing")
+def lead_briefing(
+    lead_id: uuid.UUID,
+    query: str | None = Query(default=None, min_length=1, max_length=2000),
+    context: RequestContext = Depends(require_context),
+    db: Session = Depends(get_db),
+) -> dict:
+    lead = get_lead_or_404(db, lead_id, context.business.id)
+    retrieved = lead_evidence(lead_id, query, context, db)
+    lead_fields = {
+        "id": str(lead.id),
+        "company": lead.company,
+        "contact_name": lead.contact_name,
+        "contact_email": lead.contact_email,
+        "status": lead.status.value,
+        "description": lead.description,
+        "next_action": lead.next_action,
+        "estimated_value": str(lead.estimated_value) if lead.estimated_value is not None else None,
+        "tags": lead.tags,
+        "updated_at": lead.updated_at.isoformat(),
+        "open_reminders": [
+            {
+                "title": reminder.title,
+                "due_at": reminder.due_at.isoformat(),
+            }
+            for reminder in lead.reminders
+            if reminder.completed_at is None
+        ],
+    }
+    try:
+        briefing = generate_lead_briefing(
+            lead_fields,
+            retrieved["evidence"],
+            focus=query.strip() if query and query.strip() else None,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Lead briefing is not configured") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Lead briefing generation failed") from exc
+    return {
+        "lead": retrieved["lead"],
+        "briefing": briefing,
+        "evidence_count": len(retrieved["evidence"]),
+    }
+
 @router.get("/leads/{lead_id}/interactions", response_model=list[InteractionOut])
 def list_interactions(lead_id: uuid.UUID, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> list[Interaction]:
     get_lead_or_404(db, lead_id, context.business.id)
@@ -98,14 +260,90 @@ def create_interaction(lead_id: uuid.UUID, payload: InteractionCreate, idempoten
         if replay:
             if replay.request_hash != request_hash:
                 raise HTTPException(status_code=409, detail="Idempotency key was used with a different request")
-            return replay.response_body
+            replay_body = dict(replay.response_body)
+            try:
+                replay_interaction_id = uuid.UUID(str(replay_body.get("id")))
+            except (TypeError, ValueError):
+                replay_body["body"] = ""
+                replay_body["redacted"] = True
+                return replay_body
+            replay_interaction = db.scalar(
+                select(Interaction)
+                .join(Lead)
+                .where(
+                    Interaction.id == replay_interaction_id,
+                    Lead.business_id == context.business.id,
+                )
+            )
+            if replay_interaction is None or replay_interaction.redacted:
+                replay_body["body"] = ""
+                replay_body["redacted"] = True
+            return replay_body
     interaction = Interaction(lead_id=lead_id, interaction_type=payload.interaction_type, body=payload.body.strip(), occurred_at=payload.occurred_at or datetime.now(UTC), external_ref=payload.external_ref, actor_user_id=context.user.id if context.user else None, source="agent" if context.is_agent else "user")
     db.add(interaction); db.flush()
+    db.add(enqueue_interaction_upsert(get_lead_or_404(db, lead_id, context.business.id), interaction))
     if idempotency_key:
         response_body = InteractionOut.model_validate(interaction).model_dump(mode="json")
         db.add(ApiIdempotency(business_id=context.business.id, scope_key=idempotency_key, request_hash=request_hash, response_body=response_body))
     db.commit(); db.refresh(interaction)
     return interaction
+
+
+@router.patch("/interactions/{interaction_id}", response_model=InteractionOut)
+def update_interaction(
+    interaction_id: uuid.UUID,
+    payload: InteractionUpdate,
+    context: RequestContext = Depends(require_context),
+    db: Session = Depends(get_db),
+) -> Interaction:
+    interaction = db.scalar(
+        select(Interaction)
+        .join(Lead)
+        .where(Interaction.id == interaction_id, Lead.business_id == context.business.id)
+        .with_for_update(of=Interaction)
+    )
+    if interaction is None:
+        raise HTTPException(status_code=404, detail="Interaction not found")
+    if interaction.redacted:
+        raise HTTPException(status_code=409, detail="Redacted interaction cannot be edited")
+    changes = payload.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(status_code=422, detail="At least one field must be provided")
+    if "body" in changes:
+        changes["body"] = changes["body"].strip()
+        if not changes["body"]:
+            raise HTTPException(status_code=422, detail="Interaction body cannot be blank")
+    for key, value in changes.items():
+        setattr(interaction, key, value)
+    interaction.revision += 1
+    lead = get_lead_or_404(db, interaction.lead_id, context.business.id)
+    db.add(enqueue_interaction_upsert(lead, interaction))
+    db.commit()
+    db.refresh(interaction)
+    return interaction
+
+
+@router.delete("/interactions/{interaction_id}", status_code=204)
+def redact_interaction(
+    interaction_id: uuid.UUID,
+    context: RequestContext = Depends(require_context),
+    db: Session = Depends(get_db),
+) -> None:
+    interaction = db.scalar(
+        select(Interaction)
+        .join(Lead)
+        .where(Interaction.id == interaction_id, Lead.business_id == context.business.id)
+        .with_for_update(of=Interaction)
+    )
+    if interaction is None:
+        raise HTTPException(status_code=404, detail="Interaction not found")
+    if interaction.redacted:
+        return
+    lead = get_lead_or_404(db, interaction.lead_id, context.business.id)
+    interaction.redacted = True
+    interaction.revision += 1
+    db.add(enqueue_interaction_delete(lead, interaction))
+    db.commit()
 
 @router.get("/leads/{lead_id}/timeline", response_model=TimelinePage)
 def lead_timeline(
@@ -300,7 +538,11 @@ def update_lead(lead_id: uuid.UUID, payload: LeadUpdate, context: RequestContext
 
 @router.delete("/leads/{lead_id}", status_code=204)
 def delete_lead(lead_id: uuid.UUID, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> None:
-    db.delete(get_lead_or_404(db, lead_id, context.business.id)); db.commit()
+    lead = get_lead_or_404(db, lead_id, context.business.id)
+    for interaction in lead.interactions:
+        db.add(enqueue_interaction_delete(lead, interaction, interaction.revision + 1))
+    db.delete(lead)
+    db.commit()
 
 @router.post("/leads/{lead_id}/reminders", response_model=ReminderOut, status_code=201)
 def create_reminder(lead_id: uuid.UUID, payload: ReminderCreate, context: RequestContext = Depends(require_context), db: Session = Depends(get_db)) -> Reminder:
