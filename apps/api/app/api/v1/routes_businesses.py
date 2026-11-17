@@ -5,6 +5,9 @@ from app.domain_models import Business, BusinessMembership, User, UserSession
 from app.domain_schemas import BusinessCreate, BusinessOut, BusinessUpdate, MemberAdd, MemberOut, MemberRoleUpdate, OwnershipTransfer
 from app.security import get_db, get_user_session
 from app.api.v1.routes_auth import serialize_user
+from app.integrations.zrag_outbox import enqueue_interaction_delete
+from app.domain_models import Interaction, Lead
+from sqlalchemy import select
 
 router = APIRouter(prefix="/businesses", tags=["businesses"])
 
@@ -40,6 +43,13 @@ def update_business(business_id: uuid.UUID, payload: BusinessUpdate, request: Re
 @router.delete("/{business_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_business(business_id: uuid.UUID, request: Request, db: Session = Depends(get_db)) -> None:
     user, _ = get_user_session(request, db); admin_membership(db, user.id, business_id); business = business_for_user(db, user.id, business_id)
+    interactions = db.execute(
+        select(Interaction, Lead)
+        .join(Lead, Interaction.lead_id == Lead.id)
+        .where(Lead.business_id == business.id)
+    ).all()
+    for interaction, lead in interactions:
+        db.add(enqueue_interaction_delete(lead, interaction, interaction.revision + 1))
     db.query(UserSession).filter(UserSession.active_business_id == business.id).update({"active_business_id": None})
     db.delete(business); db.commit()
 
